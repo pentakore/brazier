@@ -1,0 +1,370 @@
+import 'package:flutter/material.dart';
+
+import '../models/item.dart';
+
+class ItemDialog extends StatefulWidget {
+  final Item? item;
+  final ValueChanged<Item> onSave;
+
+  const ItemDialog({
+    super.key,
+    this.item,
+    required this.onSave,
+  });
+
+  @override
+  State<ItemDialog> createState() => _ItemDialogState();
+}
+
+class _ItemDialogState extends State<ItemDialog> {
+  final _formKey = GlobalKey<FormState>();
+
+  late TextEditingController _nameController;
+  late TextEditingController _priceController;
+  late TextEditingController _goalDurationController;
+  late TextEditingController _usedDurationController;
+  late ItemCategory _selectedCategory;
+
+  @override
+  void initState() {
+    super.initState();
+    final item = widget.item;
+    _nameController = TextEditingController(text: item?.name ?? '');
+    _priceController = TextEditingController(
+      text: item != null ? item.price.toStringAsFixed(2) : '',
+    );
+    _goalDurationController = TextEditingController(
+      text: item != null ? item.goalDurationMonths.toString() : '12',
+    );
+    _usedDurationController = TextEditingController(
+      text: item != null ? item.usedDurationMonths.toString() : '0',
+    );
+    _selectedCategory = item?.category ?? ItemCategory.devices;
+
+    _priceController.addListener(_updateCalculations);
+    _goalDurationController.addListener(_updateCalculations);
+    _usedDurationController.addListener(_updateCalculations);
+  }
+
+  void _updateCalculations() {
+    setState(() {});
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _priceController.dispose();
+    _goalDurationController.dispose();
+    _usedDurationController.dispose();
+    super.dispose();
+  }
+
+  double get _currentPrice => double.tryParse(_priceController.text) ?? 0.0;
+  int get _currentGoalDuration => int.tryParse(_goalDurationController.text) ?? 1;
+  int get _currentUsedDuration => int.tryParse(_usedDurationController.text) ?? 0;
+
+  double get _goalPricePerMonth =>
+      _currentGoalDuration > 0 ? _currentPrice / _currentGoalDuration : _currentPrice;
+
+  double get _usedPricePerMonth =>
+      _currentUsedDuration > 0 ? _currentPrice / _currentUsedDuration : _currentPrice;
+
+  void _submit() {
+    if (_formKey.currentState!.validate()) {
+      final newItem = Item(
+        id: widget.item?.id ?? DateTime.now().millisecondsSinceEpoch.toString(),
+        name: _nameController.text.trim(),
+        price: _currentPrice,
+        category: _selectedCategory,
+        goalDurationMonths: _currentGoalDuration,
+        usedDurationMonths: _currentUsedDuration,
+      );
+
+      widget.onSave(newItem);
+      Navigator.of(context).pop();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isEditing = widget.item != null;
+    final theme = Theme.of(context);
+    final isGoalReached = _currentUsedDuration >= _currentGoalDuration && _currentGoalDuration > 0;
+
+    return Dialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+      child: Container(
+        constraints: const BoxConstraints(maxWidth: 500),
+        padding: const EdgeInsets.all(24),
+        child: SingleChildScrollView(
+          child: Form(
+            key: _formKey,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Row(
+                  children: [
+                    CircleAvatar(
+                      backgroundColor: theme.colorScheme.primaryContainer,
+                      child: Icon(
+                        isEditing ? Icons.edit : Icons.add,
+                        color: theme.colorScheme.onPrimaryContainer,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        isEditing ? 'Edit Item' : 'Add New Item',
+                        style: theme.textTheme.headlineSmall?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.close),
+                      onPressed: () => Navigator.of(context).pop(),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 20),
+
+                // Name field
+                TextFormField(
+                  controller: _nameController,
+                  decoration: const InputDecoration(
+                    labelText: 'Item Name',
+                    hintText: 'e.g., Winter Coat, iPhone, Bicycle',
+                    prefixIcon: Icon(Icons.label_outline),
+                    border: OutlineInputBorder(),
+                  ),
+                  validator: (value) {
+                    if (value == null || value.trim().isEmpty) {
+                      return 'Please enter a name';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 16),
+
+                // Price field
+                TextFormField(
+                  controller: _priceController,
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  decoration: const InputDecoration(
+                    labelText: 'Price (€)',
+                    hintText: 'e.g., 100.00',
+                    prefixIcon: Icon(Icons.euro),
+                    border: OutlineInputBorder(),
+                  ),
+                  validator: (value) {
+                    if (value == null || value.trim().isEmpty) {
+                      return 'Please enter a price';
+                    }
+                    final num = double.tryParse(value);
+                    if (num == null || num < 0) {
+                      return 'Please enter a valid positive price';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 16),
+
+                // Category selector
+                Text(
+                  'Category',
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: ItemCategory.values.map((cat) {
+                    final selected = _selectedCategory == cat;
+                    return FilterChip(
+                      selected: selected,
+                      showCheckmark: false,
+                      avatar: Icon(
+                        cat.icon,
+                        size: 18,
+                        color: selected
+                            ? theme.colorScheme.onPrimary
+                            : cat.color,
+                      ),
+                      label: Text(cat.displayName),
+                      selectedColor: theme.colorScheme.primary,
+                      labelStyle: TextStyle(
+                        color: selected
+                            ? theme.colorScheme.onPrimary
+                            : theme.colorScheme.onSurface,
+                        fontWeight: selected ? FontWeight.bold : FontWeight.normal,
+                      ),
+                      onSelected: (bool isSelected) {
+                        if (isSelected) {
+                          setState(() {
+                            _selectedCategory = cat;
+                          });
+                        }
+                      },
+                    );
+                  }).toList(),
+                ),
+                const SizedBox(height: 20),
+
+                // Duration section
+                Row(
+                  children: [
+                    // Goal duration
+                    Expanded(
+                      child: TextFormField(
+                        controller: _goalDurationController,
+                        keyboardType: TextInputType.number,
+                        decoration: const InputDecoration(
+                          labelText: 'Goal Duration',
+                          suffixText: 'months',
+                          prefixIcon: Icon(Icons.flag_outlined),
+                          border: OutlineInputBorder(),
+                        ),
+                        validator: (value) {
+                          if (value == null || value.trim().isEmpty) {
+                            return 'Enter duration';
+                          }
+                          final months = int.tryParse(value);
+                          if (months == null || months <= 0) {
+                            return 'Min 1 month';
+                          }
+                          return null;
+                        },
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    // Used duration
+                    Expanded(
+                      child: TextFormField(
+                        controller: _usedDurationController,
+                        keyboardType: TextInputType.number,
+                        decoration: const InputDecoration(
+                          labelText: 'Used Duration',
+                          suffixText: 'months',
+                          prefixIcon: Icon(Icons.history),
+                          border: OutlineInputBorder(),
+                        ),
+                        validator: (value) {
+                          if (value == null || value.trim().isEmpty) {
+                            return 'Enter duration';
+                          }
+                          final months = int.tryParse(value);
+                          if (months == null || months < 0) {
+                            return 'Cannot be negative';
+                          }
+                          return null;
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+
+                // Live Preview Card
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: isGoalReached
+                        ? Colors.green.shade50
+                        : theme.colorScheme.surfaceContainerHighest,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: isGoalReached
+                          ? Colors.green.shade300
+                          : theme.colorScheme.outlineVariant,
+                      width: isGoalReached ? 2 : 1,
+                    ),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(
+                            isGoalReached ? Icons.check_circle : Icons.calculate,
+                            color: isGoalReached ? Colors.green.shade700 : theme.colorScheme.primary,
+                            size: 20,
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            isGoalReached ? 'Goal Reached!' : 'Calculated Cost / Month',
+                            style: theme.textTheme.titleSmall?.copyWith(
+                              fontWeight: FontWeight.bold,
+                              color: isGoalReached ? Colors.green.shade800 : null,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            'Goal rate:',
+                            style: theme.textTheme.bodyMedium,
+                          ),
+                          Text(
+                            '${_goalPricePerMonth.toStringAsFixed(2)} €/mo',
+                            style: theme.textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.bold,
+                              color: theme.colorScheme.primary,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            'Used rate:',
+                            style: theme.textTheme.bodyMedium,
+                          ),
+                          Text(
+                            _currentUsedDuration > 0
+                                ? '${_usedPricePerMonth.toStringAsFixed(2)} €/mo'
+                                : 'N/A (0 months)',
+                            style: theme.textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.bold,
+                              color: isGoalReached ? Colors.green.shade700 : null,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 24),
+
+                // Buttons
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    TextButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      child: const Text('Cancel'),
+                    ),
+                    const SizedBox(width: 12),
+                    FilledButton.icon(
+                      onPressed: _submit,
+                      icon: const Icon(Icons.check),
+                      label: Text(isEditing ? 'Save Changes' : 'Add Item'),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}

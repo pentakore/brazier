@@ -1,121 +1,340 @@
 import 'package:flutter/material.dart';
 
+import 'models/item.dart';
+import 'widgets/item_card.dart';
+import 'widgets/item_dialog.dart';
+import 'widgets/summary_card.dart';
+
 void main() {
-  runApp(const MyApp());
+  runApp(const BrazierApp());
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+class BrazierApp extends StatelessWidget {
+  const BrazierApp({super.key});
 
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
+      title: 'Brazier - Item Cost Tracker',
+      debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // TRY THIS: Try running your application with "flutter run". You'll see
-        // the application has a purple toolbar. Then, without quitting the app,
-        // try changing the seedColor in the colorScheme below to Colors.green
-        // and then invoke "hot reload" (save your changes or press the "hot
-        // reload" button in a Flutter-supported IDE, or press "r" if you used
-        // the command line to start the app).
-        //
-        // Notice that the counter didn't reset back to zero; the application
-        // state is not lost during the reload. To reset the state, use hot
-        // restart instead.
-        //
-        // This works for code too, not just values: Most code changes can be
-        // tested with just a hot reload.
-        colorScheme: .fromSeed(seedColor: Colors.deepPurple),
+        useMaterial3: true,
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: const Color(0xFF5C6BC0),
+          brightness: Brightness.light,
+        ),
+        appBarTheme: const AppBarTheme(
+          centerTitle: false,
+          elevation: 0,
+        ),
       ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
+      home: const ItemListScreen(),
     );
   }
 }
 
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
-
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
-
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
-
-  final String title;
+class ItemListScreen extends StatefulWidget {
+  const ItemListScreen({super.key});
 
   @override
-  State<MyHomePage> createState() => _MyHomePageState();
+  State<ItemListScreen> createState() => _ItemListScreenState();
 }
 
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
+class _ItemListScreenState extends State<ItemListScreen> {
+  // Sample initial items to give the user immediate interactive data
+  final List<Item> _items = [
+    Item(
+      id: '1',
+      name: 'Smartphone',
+      price: 800.0,
+      category: ItemCategory.devices,
+      goalDurationMonths: 24,
+      usedDurationMonths: 26,
+    ),
+    Item(
+      id: '2',
+      name: 'Winter Jacket',
+      price: 120.0,
+      category: ItemCategory.clothes,
+      goalDurationMonths: 6,
+      usedDurationMonths: 4,
+    ),
+    Item(
+      id: '3',
+      name: 'Noise Cancelling Headphones',
+      price: 240.0,
+      category: ItemCategory.devices,
+      goalDurationMonths: 12,
+      usedDurationMonths: 12,
+    ),
+    Item(
+      id: '4',
+      name: 'Running Shoes',
+      price: 100.0,
+      category: ItemCategory.fitness,
+      goalDurationMonths: 5,
+      usedDurationMonths: 2,
+    ),
+  ];
 
-  void _incrementCounter() {
+  String _searchQuery = '';
+  ItemCategory? _selectedCategoryFilter;
+  bool _showOnlyGoalReached = false;
+
+  List<Item> get _filteredItems {
+    return _items.where((item) {
+      final matchesQuery = _searchQuery.isEmpty ||
+          item.name.toLowerCase().contains(_searchQuery.toLowerCase());
+      final matchesCategory = _selectedCategoryFilter == null ||
+          item.category == _selectedCategoryFilter;
+      final matchesGoalFilter = !_showOnlyGoalReached || item.isGoalReached;
+
+      return matchesQuery && matchesCategory && matchesGoalFilter;
+    }).toList();
+  }
+
+  void _addItem(Item newItem) {
     setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
+      _items.add(newItem);
     });
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Added "${newItem.name}"'),
+        action: SnackBarAction(
+          label: 'DISMISS',
+          onPressed: () {},
+        ),
+      ),
+    );
+  }
+
+  void _editItem(Item updatedItem) {
+    setState(() {
+      final index = _items.indexWhere((i) => i.id == updatedItem.id);
+      if (index != -1) {
+        _items[index] = updatedItem;
+      }
+    });
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Updated "${updatedItem.name}"')),
+    );
+  }
+
+  void _deleteItem(String id) {
+    final itemToDelete = _items.firstWhere((i) => i.id == id);
+    setState(() {
+      _items.removeWhere((i) => i.id == id);
+    });
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Deleted "${itemToDelete.name}"'),
+        action: SnackBarAction(
+          label: 'UNDO',
+          onPressed: () {
+            setState(() {
+              _items.add(itemToDelete);
+            });
+          },
+        ),
+      ),
+    );
+  }
+
+  void _updateUsedDuration(String id, int newDuration) {
+    setState(() {
+      final index = _items.indexWhere((i) => i.id == id);
+      if (index != -1) {
+        _items[index].usedDurationMonths = newDuration;
+      }
+    });
+  }
+
+  void _openAddDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => ItemDialog(
+        onSave: _addItem,
+      ),
+    );
+  }
+
+  void _openEditDialog(Item item) {
+    showDialog(
+      context: context,
+      builder: (context) => ItemDialog(
+        item: item,
+        onSave: _editItem,
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
+    final theme = Theme.of(context);
+    final filtered = _filteredItems;
+
     return Scaffold(
       appBar: AppBar(
-        // TRY THIS: Try changing the color here to a specific color (to
-        // Colors.amber, perhaps?) and trigger a hot reload to see the AppBar
-        // change color while the other colors stay the same.
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
-        title: Text(widget.title),
-      ),
-      body: Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
-        child: Column(
-          // Column is also a layout widget. It takes a list of children and
-          // arranges them vertically. By default, it sizes itself to fit its
-          // children horizontally, and tries to be as tall as its parent.
-          //
-          // Column has various properties to control how it sizes itself and
-          // how it positions its children. Here we use mainAxisAlignment to
-          // center the children vertically; the main axis here is the vertical
-          // axis because Columns are vertical (the cross axis would be
-          // horizontal).
-          //
-          // TRY THIS: Invoke "debug painting" (choose the "Toggle Debug Paint"
-          // action in the IDE, or press "p" in the console), to see the
-          // wireframe for each widget.
-          mainAxisAlignment: .center,
+        title: Row(
           children: [
-            const Text('You have pushed the button this many times:'),
+            const Icon(Icons.local_fire_department, color: Colors.orangeAccent),
+            const SizedBox(width: 8),
             Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
+              'Brazier Cost Tracker',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                color: theme.colorScheme.onSurface,
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.add),
+            tooltip: 'Add Item',
+            onPressed: _openAddDialog,
+          ),
+        ],
+      ),
+      body: SafeArea(
+        child: Column(
+          children: [
+            // Top Stats Summary
+            SummaryCard(items: _items),
+
+            // Search & Category Filter Section
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0),
+              child: Column(
+                children: [
+                  // Search Bar
+                  TextField(
+                    decoration: InputDecoration(
+                      hintText: 'Search items...',
+                      prefixIcon: const Icon(Icons.search),
+                      suffixIcon: _searchQuery.isNotEmpty
+                          ? IconButton(
+                              icon: const Icon(Icons.clear),
+                              onPressed: () => setState(() => _searchQuery = ''),
+                            )
+                          : null,
+                      filled: true,
+                      fillColor: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+                      contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 16),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide.none,
+                      ),
+                    ),
+                    onChanged: (value) {
+                      setState(() {
+                        _searchQuery = value;
+                      });
+                    },
+                  ),
+                  const SizedBox(height: 10),
+
+                  // Category Filter Chips
+                  SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children: [
+                        FilterChip(
+                          label: const Text('All Categories'),
+                          selected: _selectedCategoryFilter == null && !_showOnlyGoalReached,
+                          onSelected: (selected) {
+                            if (selected) {
+                              setState(() {
+                                _selectedCategoryFilter = null;
+                                _showOnlyGoalReached = false;
+                              });
+                            }
+                          },
+                        ),
+                        const SizedBox(width: 8),
+                        FilterChip(
+                          avatar: const Icon(Icons.check_circle_outline, size: 16),
+                          label: const Text('Goal Reached'),
+                          selected: _showOnlyGoalReached,
+                          selectedColor: Colors.green.shade100,
+                          onSelected: (selected) {
+                            setState(() {
+                              _showOnlyGoalReached = selected;
+                            });
+                          },
+                        ),
+                        const SizedBox(width: 8),
+                        ...ItemCategory.values.map((cat) {
+                          final selected = _selectedCategoryFilter == cat;
+                          return Padding(
+                            padding: const EdgeInsets.only(right: 8.0),
+                            child: FilterChip(
+                              avatar: Icon(cat.icon, size: 16, color: selected ? null : cat.color),
+                              label: Text(cat.displayName),
+                              selected: selected,
+                              onSelected: (isSelected) {
+                                setState(() {
+                                  _selectedCategoryFilter = isSelected ? cat : null;
+                                });
+                              },
+                            ),
+                          );
+                        }),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 12),
+
+            // Item List
+            Expanded(
+              child: filtered.isEmpty
+                  ? Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.inventory_2_outlined,
+                            size: 64,
+                            color: theme.colorScheme.outline,
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            _items.isEmpty
+                                ? 'No items tracked yet.\nTap "+" to add your first item!'
+                                : 'No items match your filters.',
+                            textAlign: TextAlign.center,
+                            style: theme.textTheme.bodyLarge?.copyWith(
+                              color: theme.colorScheme.outline,
+                            ),
+                          ),
+                        ],
+                      ),
+                    )
+                  : ListView.builder(
+                      itemCount: filtered.length,
+                      padding: const EdgeInsets.only(bottom: 80),
+                      itemBuilder: (context, index) {
+                        final item = filtered[index];
+                        return ItemCard(
+                          item: item,
+                          onEdit: () => _openEditDialog(item),
+                          onDelete: () => _deleteItem(item.id),
+                          onUpdateUsedDuration: (newDuration) =>
+                              _updateUsedDuration(item.id, newDuration),
+                        );
+                      },
+                    ),
             ),
           ],
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: _openAddDialog,
+        icon: const Icon(Icons.add),
+        label: const Text('Add Item'),
       ),
     );
   }
