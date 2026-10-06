@@ -314,7 +314,13 @@ class _HomeScreenState extends State<HomeScreen> {
       appBar: AppBar(
         title: Row(
           children: [
-            const Icon(Icons.local_fire_department, color: Colors.orangeAccent),
+            Image.asset(
+              'asset/icon/logo.png',
+              height: 28,
+              width: 28,
+              errorBuilder: (context, error, stackTrace) =>
+                  const Icon(Icons.local_fire_department, color: Colors.orangeAccent),
+            ),
             const SizedBox(width: 8),
             Text(
               _appBarTitle,
