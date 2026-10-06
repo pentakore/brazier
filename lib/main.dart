@@ -1,3 +1,4 @@
+import 'dart:math';
 import 'package:flutter/material.dart';
 
 import 'models/item.dart';
@@ -185,28 +186,65 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _handleReviewItem(Item item, bool used) {
+    _updateMonthlyStatus(
+      item,
+      used ? MonthlyReviewStatus.used : MonthlyReviewStatus.notUsed,
+    );
+  }
+
+  void _updateMonthlyStatus(Item item, MonthlyReviewStatus newStatus) {
     setState(() {
       final index = _items.indexWhere((i) => i.id == item.id);
       if (index != -1) {
         final current = _items[index];
-        if (used) {
+        final oldStatus = current.currentMonthlyStatus;
+
+        if (oldStatus == newStatus) return;
+
+        // Adjust usedDurationMonths depending on transition
+        if (oldStatus == MonthlyReviewStatus.used && newStatus != MonthlyReviewStatus.used) {
+          // Was used, now no longer used -> decrement
+          current.usedDurationMonths = max(0, current.usedDurationMonths - 1);
+        } else if (oldStatus != MonthlyReviewStatus.used && newStatus == MonthlyReviewStatus.used) {
+          // Was not used/pending, now used -> increment
           current.usedDurationMonths += 1;
-          current.currentMonthUsed = true;
-        } else {
-          current.currentMonthUsed = false;
         }
-        current.lastReviewedMonthKey = Item.currentMonthKey;
+
+        // Update review status flags
+        switch (newStatus) {
+          case MonthlyReviewStatus.used:
+            current.lastReviewedMonthKey = Item.currentMonthKey;
+            current.currentMonthUsed = true;
+            break;
+          case MonthlyReviewStatus.notUsed:
+            current.lastReviewedMonthKey = Item.currentMonthKey;
+            current.currentMonthUsed = false;
+            break;
+          case MonthlyReviewStatus.pending:
+            current.lastReviewedMonthKey = null;
+            current.currentMonthUsed = null;
+            break;
+        }
       }
     });
+
+    String msg;
+    switch (newStatus) {
+      case MonthlyReviewStatus.used:
+        msg = 'Marked "${item.name}" as Currently Used (+1 mo)';
+        break;
+      case MonthlyReviewStatus.notUsed:
+        msg = 'Marked "${item.name}" as Not Used';
+        break;
+      case MonthlyReviewStatus.pending:
+        msg = 'Reset "${item.name}" to Needs Review (reappeared in Review tab)';
+        break;
+    }
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         duration: const Duration(seconds: 2),
-        content: Text(
-          used
-              ? 'Marked "${item.name}" as USED (+1 mo)!'
-              : 'Marked "${item.name}" as NOT USED.',
-        ),
+        content: Text(msg),
       ),
     );
   }
@@ -496,6 +534,8 @@ class _HomeScreenState extends State<HomeScreen> {
                               item: item,
                               onEdit: () => _openEditDialog(item),
                               onDelete: () => _deleteItem(item.id),
+                              onUpdateMonthlyStatus: (newStatus) =>
+                                  _updateMonthlyStatus(item, newStatus),
                             );
                           },
                         ),

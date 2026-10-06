@@ -6,12 +6,14 @@ class ItemCard extends StatelessWidget {
   final Item item;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
+  final ValueChanged<MonthlyReviewStatus> onUpdateMonthlyStatus;
 
   const ItemCard({
     super.key,
     required this.item,
     required this.onEdit,
     required this.onDelete,
+    required this.onUpdateMonthlyStatus,
   });
 
   @override
@@ -54,7 +56,7 @@ class ItemCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Top Row: Category chip, Current Month Usage Status tag, Goal status badge, Actions menu
+            // Top Row: Category chip, Current Month Usage Status Dropdown, Goal status badge, Actions menu
             Row(
               children: [
                 // Category Tag
@@ -86,71 +88,132 @@ class ItemCard extends StatelessWidget {
                 ),
                 const SizedBox(width: 8),
 
-                // Current Month Usage Status Tag ("Currently used" / "Not used" / nothing)
-                if (monthlyStatus == MonthlyReviewStatus.used)
-                  Container(
+                // Interactive Monthly Status Dropdown Chip
+                PopupMenuButton<MonthlyReviewStatus>(
+                  tooltip: 'Change current month usage state',
+                  onSelected: onUpdateMonthlyStatus,
+                  itemBuilder: (context) => [
+                    PopupMenuItem(
+                      value: MonthlyReviewStatus.used,
+                      child: Row(
+                        children: [
+                          Icon(Icons.check, color: Colors.teal.shade600, size: 18),
+                          const SizedBox(width: 8),
+                          Text(
+                            'Currently Used (+1 mo)',
+                            style: TextStyle(
+                              fontWeight: monthlyStatus == MonthlyReviewStatus.used
+                                  ? FontWeight.bold
+                                  : FontWeight.normal,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    PopupMenuItem(
+                      value: MonthlyReviewStatus.notUsed,
+                      child: Row(
+                        children: [
+                          Icon(Icons.close, color: Colors.orange.shade700, size: 18),
+                          const SizedBox(width: 8),
+                          Text(
+                            'Not Used',
+                            style: TextStyle(
+                              fontWeight: monthlyStatus == MonthlyReviewStatus.notUsed
+                                  ? FontWeight.bold
+                                  : FontWeight.normal,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const PopupMenuDivider(),
+                    PopupMenuItem(
+                      value: MonthlyReviewStatus.pending,
+                      child: Row(
+                        children: [
+                          const Icon(Icons.rate_review_outlined, color: Colors.grey, size: 18),
+                          const SizedBox(width: 8),
+                          Text(
+                            'Needs Review',
+                            style: TextStyle(
+                              fontWeight: monthlyStatus == MonthlyReviewStatus.pending
+                                  ? FontWeight.bold
+                                  : FontWeight.normal,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                  child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
-                      color: isDarkMode
-                          ? Colors.teal.shade900.withValues(alpha: 0.5)
-                          : Colors.teal.shade100,
+                      color: monthlyStatus == MonthlyReviewStatus.used
+                          ? (isDarkMode
+                              ? Colors.teal.shade900.withValues(alpha: 0.5)
+                              : Colors.teal.shade100)
+                          : monthlyStatus == MonthlyReviewStatus.notUsed
+                              ? (isDarkMode
+                                  ? Colors.orange.shade900.withValues(alpha: 0.5)
+                                  : Colors.orange.shade100)
+                              : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
                       borderRadius: BorderRadius.circular(20),
                       border: Border.all(
-                        color: Colors.teal.shade400,
+                        color: monthlyStatus == MonthlyReviewStatus.used
+                            ? Colors.teal.shade400
+                            : monthlyStatus == MonthlyReviewStatus.notUsed
+                                ? (isDarkMode ? Colors.orange.shade400 : Colors.orange.shade300)
+                                : theme.colorScheme.outlineVariant,
                       ),
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Icon(
-                          Icons.check,
+                          monthlyStatus == MonthlyReviewStatus.used
+                              ? Icons.check
+                              : monthlyStatus == MonthlyReviewStatus.notUsed
+                                  ? Icons.close
+                                  : Icons.help_outline,
                           size: 13,
-                          color: isDarkMode ? Colors.teal.shade200 : Colors.teal.shade800,
+                          color: monthlyStatus == MonthlyReviewStatus.used
+                              ? (isDarkMode ? Colors.teal.shade200 : Colors.teal.shade800)
+                              : monthlyStatus == MonthlyReviewStatus.notUsed
+                                  ? (isDarkMode ? Colors.orange.shade200 : Colors.orange.shade900)
+                                  : theme.colorScheme.outline,
                         ),
                         const SizedBox(width: 4),
                         Text(
-                          'Currently used',
+                          monthlyStatus == MonthlyReviewStatus.used
+                              ? 'Currently used'
+                              : monthlyStatus == MonthlyReviewStatus.notUsed
+                                  ? 'Not used'
+                                  : 'Needs review',
                           style: TextStyle(
-                            color: isDarkMode ? Colors.teal.shade200 : Colors.teal.shade900,
+                            color: monthlyStatus == MonthlyReviewStatus.used
+                                ? (isDarkMode ? Colors.teal.shade200 : Colors.teal.shade900)
+                                : monthlyStatus == MonthlyReviewStatus.notUsed
+                                    ? (isDarkMode ? Colors.orange.shade200 : Colors.orange.shade900)
+                                    : theme.colorScheme.onSurfaceVariant,
                             fontWeight: FontWeight.bold,
                             fontSize: 11,
                           ),
                         ),
-                      ],
-                    ),
-                  )
-                else if (monthlyStatus == MonthlyReviewStatus.notUsed)
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: isDarkMode
-                          ? Colors.orange.shade900.withValues(alpha: 0.5)
-                          : Colors.orange.shade100,
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(
-                        color: isDarkMode ? Colors.orange.shade400 : Colors.orange.shade300,
-                      ),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
+                        const SizedBox(width: 2),
                         Icon(
-                          Icons.close,
-                          size: 13,
-                          color: isDarkMode ? Colors.orange.shade200 : Colors.orange.shade900,
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          'Not used',
-                          style: TextStyle(
-                            color: isDarkMode ? Colors.orange.shade200 : Colors.orange.shade900,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 11,
-                          ),
+                          Icons.arrow_drop_down,
+                          size: 16,
+                          color: monthlyStatus == MonthlyReviewStatus.used
+                              ? (isDarkMode ? Colors.teal.shade200 : Colors.teal.shade800)
+                              : monthlyStatus == MonthlyReviewStatus.notUsed
+                                  ? (isDarkMode ? Colors.orange.shade200 : Colors.orange.shade900)
+                                  : theme.colorScheme.outline,
                         ),
                       ],
                     ),
                   ),
+                ),
 
                 const Spacer(),
 
