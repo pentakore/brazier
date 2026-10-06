@@ -89,6 +89,7 @@ class _ItemDialogState extends State<ItemDialog> {
   Widget build(BuildContext context) {
     final isEditing = widget.item != null;
     final theme = Theme.of(context);
+    final isDarkMode = theme.brightness == Brightness.dark;
     final isGoalReached = _currentUsedDuration >= _currentGoalDuration && _currentGoalDuration > 0;
 
     return Dialog(
@@ -273,12 +274,14 @@ class _ItemDialogState extends State<ItemDialog> {
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
                     color: isGoalReached
-                        ? Colors.green.shade50
+                        ? (isDarkMode
+                            ? Colors.green.shade900.withValues(alpha: 0.3)
+                            : Colors.green.shade50)
                         : theme.colorScheme.surfaceContainerHighest,
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
                       color: isGoalReached
-                          ? Colors.green.shade300
+                          ? (isDarkMode ? Colors.green.shade400 : Colors.green.shade300)
                           : theme.colorScheme.outlineVariant,
                       width: isGoalReached ? 2 : 1,
                     ),
@@ -290,7 +293,9 @@ class _ItemDialogState extends State<ItemDialog> {
                         children: [
                           Icon(
                             isGoalReached ? Icons.check_circle : Icons.calculate,
-                            color: isGoalReached ? Colors.green.shade700 : theme.colorScheme.primary,
+                            color: isGoalReached
+                                ? (isDarkMode ? Colors.green.shade300 : Colors.green.shade700)
+                                : theme.colorScheme.primary,
                             size: 20,
                           ),
                           const SizedBox(width: 8),
@@ -298,7 +303,9 @@ class _ItemDialogState extends State<ItemDialog> {
                             isGoalReached ? 'Goal Reached!' : 'Calculated Cost / Month',
                             style: theme.textTheme.titleSmall?.copyWith(
                               fontWeight: FontWeight.bold,
-                              color: isGoalReached ? Colors.green.shade800 : null,
+                              color: isGoalReached
+                                  ? (isDarkMode ? Colors.green.shade200 : Colors.green.shade800)
+                                  : null,
                             ),
                           ),
                         ],
@@ -334,7 +341,9 @@ class _ItemDialogState extends State<ItemDialog> {
                                 : 'N/A (0 months)',
                             style: theme.textTheme.titleMedium?.copyWith(
                               fontWeight: FontWeight.bold,
-                              color: isGoalReached ? Colors.green.shade700 : null,
+                              color: isGoalReached
+                                  ? (isDarkMode ? Colors.green.shade300 : Colors.green.shade700)
+                                  : null,
                             ),
                           ),
                         ],
