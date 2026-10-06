@@ -24,6 +24,7 @@ class _ItemDialogState extends State<ItemDialog> {
   late TextEditingController _goalDurationController;
   late TextEditingController _usedDurationController;
   late ItemCategory _selectedCategory;
+  late bool _isDefaultUsed;
 
   @override
   void initState() {
@@ -40,6 +41,7 @@ class _ItemDialogState extends State<ItemDialog> {
       text: item != null ? item.usedDurationMonths.toString() : '0',
     );
     _selectedCategory = item?.category ?? ItemCategory.devices;
+    _isDefaultUsed = item?.isDefaultUsed ?? false;
 
     _priceController.addListener(_updateCalculations);
     _goalDurationController.addListener(_updateCalculations);
@@ -78,6 +80,9 @@ class _ItemDialogState extends State<ItemDialog> {
         category: _selectedCategory,
         goalDurationMonths: _currentGoalDuration,
         usedDurationMonths: _currentUsedDuration,
+        lastReviewedMonthKey: widget.item?.lastReviewedMonthKey,
+        currentMonthUsed: widget.item?.currentMonthUsed,
+        isDefaultUsed: _isDefaultUsed,
       );
 
       widget.onSave(newItem);
@@ -268,6 +273,31 @@ class _ItemDialogState extends State<ItemDialog> {
                   ],
                 ),
                 const SizedBox(height: 16),
+
+                // Default as Used Option
+                CheckboxListTile(
+                  value: _isDefaultUsed,
+                  onChanged: (val) {
+                    setState(() {
+                      _isDefaultUsed = val ?? false;
+                    });
+                  },
+                  contentPadding: EdgeInsets.zero,
+                  activeColor: theme.colorScheme.primary,
+                  title: const Text(
+                    'Default as used every month',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                  ),
+                  subtitle: Text(
+                    'Automatically marks this item as used every month without needing manual review',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: isDarkMode ? Colors.grey.shade400 : Colors.grey.shade600,
+                    ),
+                  ),
+                  controlAffinity: ListTileControlAffinity.leading,
+                ),
+                const SizedBox(height: 12),
 
                 // Live Preview Card
                 Container(

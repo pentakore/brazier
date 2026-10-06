@@ -346,7 +346,7 @@ class _ReviewViewState extends State<ReviewView> {
                 onPressed: () => _handleReview(currentItem, true),
                 icon: const Icon(Icons.check, size: 24),
                 label: const Text(
-                  'Used (+1 mo)',
+                  'Used',
                   style: TextStyle(fontWeight: FontWeight.bold),
                 ),
               ),

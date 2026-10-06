@@ -39,6 +39,7 @@ class Item {
   int usedDurationMonths;
   String? lastReviewedMonthKey;
   bool? currentMonthUsed;
+  bool isDefaultUsed;
 
   Item({
     required this.id,
@@ -49,6 +50,7 @@ class Item {
     required this.usedDurationMonths,
     this.lastReviewedMonthKey,
     this.currentMonthUsed,
+    this.isDefaultUsed = false,
   });
 
   /// Calculates current year-month key string, e.g. "2025-05".
@@ -57,8 +59,24 @@ class Item {
     return '${now.year}-${now.month.toString().padLeft(2, '0')}';
   }
 
+  /// Automatically syncs monthly usage if [isDefaultUsed] is enabled.
+  void checkAutoSyncDefaultUsed() {
+    if (isDefaultUsed && lastReviewedMonthKey != currentMonthKey) {
+      if (lastReviewedMonthKey != null) {
+        // A new month has arrived for a default-used item -> increment usage
+        usedDurationMonths += 1;
+      }
+      lastReviewedMonthKey = currentMonthKey;
+      currentMonthUsed = true;
+    }
+  }
+
   /// Returns the current month's review status.
   MonthlyReviewStatus get currentMonthlyStatus {
+    checkAutoSyncDefaultUsed();
+    if (isDefaultUsed) {
+      return MonthlyReviewStatus.used;
+    }
     if (lastReviewedMonthKey != currentMonthKey) {
       return MonthlyReviewStatus.pending;
     }
@@ -100,6 +118,7 @@ class Item {
     int? usedDurationMonths,
     String? lastReviewedMonthKey,
     bool? currentMonthUsed,
+    bool? isDefaultUsed,
   }) {
     return Item(
       id: id ?? this.id,
@@ -110,6 +129,7 @@ class Item {
       usedDurationMonths: usedDurationMonths ?? this.usedDurationMonths,
       lastReviewedMonthKey: lastReviewedMonthKey ?? this.lastReviewedMonthKey,
       currentMonthUsed: currentMonthUsed ?? this.currentMonthUsed,
+      isDefaultUsed: isDefaultUsed ?? this.isDefaultUsed,
     );
   }
 }

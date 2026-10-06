@@ -91,6 +91,7 @@ class _HomeScreenState extends State<HomeScreen> {
       category: ItemCategory.devices,
       goalDurationMonths: 24,
       usedDurationMonths: 26,
+      isDefaultUsed: true,
     ),
     Item(
       id: '2',
@@ -199,7 +200,7 @@ class _HomeScreenState extends State<HomeScreen> {
         final current = _items[index];
         final oldStatus = current.currentMonthlyStatus;
 
-        if (oldStatus == newStatus) return;
+        if (oldStatus == newStatus && !current.isDefaultUsed) return;
 
         // Adjust usedDurationMonths depending on transition
         if (oldStatus == MonthlyReviewStatus.used && newStatus != MonthlyReviewStatus.used) {
@@ -219,10 +220,12 @@ class _HomeScreenState extends State<HomeScreen> {
           case MonthlyReviewStatus.notUsed:
             current.lastReviewedMonthKey = Item.currentMonthKey;
             current.currentMonthUsed = false;
+            current.isDefaultUsed = false; // Disable auto-default on explicit override
             break;
           case MonthlyReviewStatus.pending:
             current.lastReviewedMonthKey = null;
             current.currentMonthUsed = null;
+            current.isDefaultUsed = false; // Disable auto-default on explicit override
             break;
         }
       }
@@ -406,11 +409,12 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ],
           ),
-          IconButton(
-            icon: const Icon(Icons.add),
-            tooltip: 'Add Item',
-            onPressed: _openAddDialog,
-          ),
+          if (_currentTabIndex == 0)
+            IconButton(
+              icon: const Icon(Icons.add),
+              tooltip: 'Add Item',
+              onPressed: _openAddDialog,
+            ),
         ],
       ),
       body: SafeArea(
@@ -594,11 +598,13 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: _openAddDialog,
-        icon: const Icon(Icons.add),
-        label: const Text('Add Item'),
-      ),
+      floatingActionButton: _currentTabIndex == 0
+          ? FloatingActionButton.extended(
+              onPressed: _openAddDialog,
+              icon: const Icon(Icons.add),
+              label: const Text('Add Item'),
+            )
+          : null,
     );
   }
 }
