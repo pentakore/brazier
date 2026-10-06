@@ -47,13 +47,18 @@ class SummaryCard extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                'Overview Summary',
-                style: theme.textTheme.titleMedium?.copyWith(
-                  color: theme.colorScheme.onPrimary.withValues(alpha: 0.9),
-                  fontWeight: FontWeight.w600,
+              Expanded(
+                child: Text(
+                  'Overview Summary',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    color: theme.colorScheme.onPrimary.withValues(alpha: 0.9),
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
+              const SizedBox(width: 8),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
@@ -72,11 +77,15 @@ class SummaryCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 12),
-          Text(
-            '${totalSpent.toStringAsFixed(2)} €',
-            style: theme.textTheme.headlineMedium?.copyWith(
-              color: theme.colorScheme.onPrimary,
-              fontWeight: FontWeight.bold,
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Text(
+              '${totalSpent.toStringAsFixed(2)} €',
+              style: theme.textTheme.headlineMedium?.copyWith(
+                color: theme.colorScheme.onPrimary,
+                fontWeight: FontWeight.bold,
+              ),
             ),
           ),
           Text(
@@ -97,18 +106,24 @@ class SummaryCard extends StatelessWidget {
                   children: [
                     Text(
                       'Target Monthly Cost',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                       style: TextStyle(
                         color: theme.colorScheme.onPrimary.withValues(alpha: 0.8),
                         fontSize: 11,
                       ),
                     ),
                     const SizedBox(height: 2),
-                    Text(
-                      '${totalGoalPerMonth.toStringAsFixed(2)} € / mo',
-                      style: TextStyle(
-                        color: theme.colorScheme.onPrimary,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
+                    FittedBox(
+                      fit: BoxFit.scaleDown,
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        '${totalGoalPerMonth.toStringAsFixed(2)} € / mo',
+                        style: TextStyle(
+                          color: theme.colorScheme.onPrimary,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
                       ),
                     ),
                   ],
@@ -126,18 +141,24 @@ class SummaryCard extends StatelessWidget {
                   children: [
                     Text(
                       'Current Monthly Cost',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                       style: TextStyle(
                         color: theme.colorScheme.onPrimary.withValues(alpha: 0.8),
                         fontSize: 11,
                       ),
                     ),
                     const SizedBox(height: 2),
-                    Text(
-                      '${totalUsedPerMonth.toStringAsFixed(2)} € / mo',
-                      style: TextStyle(
-                        color: theme.colorScheme.onPrimary,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
+                    FittedBox(
+                      fit: BoxFit.scaleDown,
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        '${totalUsedPerMonth.toStringAsFixed(2)} € / mo',
+                        style: TextStyle(
+                          color: theme.colorScheme.onPrimary,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
                       ),
                     ),
                   ],

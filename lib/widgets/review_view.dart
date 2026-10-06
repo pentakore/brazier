@@ -65,8 +65,8 @@ class _ReviewViewState extends State<ReviewView> {
 
     if (pending.isEmpty) {
       return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(32.0),
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(24.0),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
@@ -80,11 +80,11 @@ class _ReviewViewState extends State<ReviewView> {
                 ),
                 child: Icon(
                   Icons.verified_outlined,
-                  size: 72,
+                  size: 64,
                   color: isDarkMode ? Colors.green.shade300 : Colors.green.shade600,
                 ),
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 20),
               Text(
                 'All caught up for this month! 🎉',
                 textAlign: TextAlign.center,
@@ -101,7 +101,7 @@ class _ReviewViewState extends State<ReviewView> {
                   height: 1.4,
                 ),
               ),
-              const SizedBox(height: 32),
+              const SizedBox(height: 24),
               OutlinedButton.icon(
                 onPressed: widget.onResetAllReviews,
                 icon: const Icon(Icons.refresh),
@@ -128,21 +128,26 @@ class _ReviewViewState extends State<ReviewView> {
     final isSwipingLeft = horizontalDrag < -40;
 
     return Padding(
-      padding: const EdgeInsets.all(16.0),
+      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
       child: Column(
         children: [
           // Header info
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                'Monthly Usage Review',
-                style: theme.textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
+              Expanded(
+                child: Text(
+                  'Monthly Usage Review',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
+              const SizedBox(width: 8),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
                   color: theme.colorScheme.primaryContainer,
                   borderRadius: BorderRadius.circular(20),
@@ -158,15 +163,15 @@ class _ReviewViewState extends State<ReviewView> {
               ),
             ],
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 4),
           Text(
-            'Swipe RIGHT if used this month, LEFT if not used, UP/DOWN to skip.',
+            'Swipe RIGHT if used, LEFT if not used, UP/DOWN to skip.',
             style: theme.textTheme.bodySmall?.copyWith(
               color: isDarkMode ? Colors.grey.shade400 : Colors.grey.shade600,
             ),
             textAlign: TextAlign.center,
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
 
           // Swipe Card Stack Area
           Expanded(
@@ -180,7 +185,7 @@ class _ReviewViewState extends State<ReviewView> {
                     Transform.scale(
                       scale: 0.94,
                       child: Transform.translate(
-                        offset: const Offset(0, 16),
+                        offset: const Offset(0, 14),
                         child: Opacity(
                           opacity: 0.6,
                           child: _ReviewCardContent(
@@ -231,14 +236,14 @@ class _ReviewViewState extends State<ReviewView> {
                             // "USED" Stamp Overlay when dragging right
                             if (isSwipingRight)
                               Positioned(
-                                top: 40,
-                                left: 30,
+                                top: 30,
+                                left: 20,
                                 child: Transform.rotate(
                                   angle: -pi / 12,
                                   child: Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
                                     decoration: BoxDecoration(
-                                      border: Border.all(color: Colors.green, width: 4),
+                                      border: Border.all(color: Colors.green, width: 3.5),
                                       borderRadius: BorderRadius.circular(12),
                                       color: Colors.green.withValues(alpha: 0.2),
                                     ),
@@ -247,8 +252,8 @@ class _ReviewViewState extends State<ReviewView> {
                                       style: TextStyle(
                                         color: Colors.green,
                                         fontWeight: FontWeight.w900,
-                                        fontSize: 24,
-                                        letterSpacing: 1.5,
+                                        fontSize: 20,
+                                        letterSpacing: 1.2,
                                       ),
                                     ),
                                   ),
@@ -258,14 +263,14 @@ class _ReviewViewState extends State<ReviewView> {
                             // "NOT USED" Stamp Overlay when dragging left
                             if (isSwipingLeft)
                               Positioned(
-                                top: 40,
-                                right: 30,
+                                top: 30,
+                                right: 20,
                                 child: Transform.rotate(
                                   angle: pi / 12,
                                   child: Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
                                     decoration: BoxDecoration(
-                                      border: Border.all(color: Colors.red, width: 4),
+                                      border: Border.all(color: Colors.red, width: 3.5),
                                       borderRadius: BorderRadius.circular(12),
                                       color: Colors.red.withValues(alpha: 0.2),
                                     ),
@@ -274,8 +279,8 @@ class _ReviewViewState extends State<ReviewView> {
                                       style: TextStyle(
                                         color: Colors.red,
                                         fontWeight: FontWeight.w900,
-                                        fontSize: 24,
-                                        letterSpacing: 1.5,
+                                        fontSize: 20,
+                                        letterSpacing: 1.2,
                                       ),
                                     ),
                                   ),
@@ -290,69 +295,83 @@ class _ReviewViewState extends State<ReviewView> {
               ),
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
 
           // Action Buttons Bar
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
-              // NOT USED Button (Left gesture equivalent)
-              ElevatedButton.icon(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: isDarkMode
-                      ? Colors.red.shade900.withValues(alpha: 0.4)
-                      : Colors.red.shade50,
-                  foregroundColor: isDarkMode ? Colors.red.shade200 : Colors.red.shade700,
-                  elevation: 2,
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(30),
-                    side: BorderSide(
-                      color: isDarkMode ? Colors.red.shade400 : Colors.red.shade200,
+              // NOT USED Button
+              Flexible(
+                child: ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: isDarkMode
+                        ? Colors.red.shade900.withValues(alpha: 0.4)
+                        : Colors.red.shade50,
+                    foregroundColor: isDarkMode ? Colors.red.shade200 : Colors.red.shade700,
+                    elevation: 2,
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(30),
+                      side: BorderSide(
+                        color: isDarkMode ? Colors.red.shade400 : Colors.red.shade200,
+                      ),
+                    ),
+                  ),
+                  onPressed: () => _handleReview(currentItem, false),
+                  icon: const Icon(Icons.close, size: 20),
+                  label: const FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text(
+                      'Not Used',
+                      style: TextStyle(fontWeight: FontWeight.bold),
                     ),
                   ),
                 ),
-                onPressed: () => _handleReview(currentItem, false),
-                icon: const Icon(Icons.close, size: 24),
-                label: const Text(
-                  'Not Used',
-                  style: TextStyle(fontWeight: FontWeight.bold),
-                ),
               ),
+              const SizedBox(width: 4),
 
-              // Up/Down Navigation / Skip Buttons
+              // Up/Down Navigation Buttons
               IconButton.filledTonal(
+                visualDensity: VisualDensity.compact,
                 tooltip: 'Previous Item (Swipe Down)',
-                icon: const Icon(Icons.arrow_upward),
+                icon: const Icon(Icons.arrow_upward, size: 20),
                 onPressed: _previousItem,
               ),
               IconButton.filledTonal(
+                visualDensity: VisualDensity.compact,
                 tooltip: 'Next Item (Swipe Up)',
-                icon: const Icon(Icons.arrow_downward),
+                icon: const Icon(Icons.arrow_downward, size: 20),
                 onPressed: _nextItem,
               ),
+              const SizedBox(width: 4),
 
-              // USED Button (Right gesture equivalent)
-              ElevatedButton.icon(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: isDarkMode ? Colors.green.shade700 : Colors.green.shade600,
-                  foregroundColor: Colors.white,
-                  elevation: 2,
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(30),
+              // USED Button
+              Flexible(
+                child: ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: isDarkMode ? Colors.green.shade700 : Colors.green.shade600,
+                    foregroundColor: Colors.white,
+                    elevation: 2,
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(30),
+                    ),
                   ),
-                ),
-                onPressed: () => _handleReview(currentItem, true),
-                icon: const Icon(Icons.check, size: 24),
-                label: const Text(
-                  'Used',
-                  style: TextStyle(fontWeight: FontWeight.bold),
+                  onPressed: () => _handleReview(currentItem, true),
+                  icon: const Icon(Icons.check, size: 20),
+                  label: const FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text(
+                      'Used (+1 mo)',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                  ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 8),
         ],
       ),
     );
@@ -378,7 +397,6 @@ class _ReviewCardContent extends StatelessWidget {
 
     return SizedBox(
       width: double.infinity,
-      height: 380,
       child: Card(
         elevation: 6,
         shape: RoundedRectangleBorder(
@@ -386,126 +404,138 @@ class _ReviewCardContent extends StatelessWidget {
           side: BorderSide(color: theme.colorScheme.outlineVariant, width: 1.5),
         ),
         child: Padding(
-          padding: const EdgeInsets.all(24.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              // Header Category Badge
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: item.category.color.withValues(alpha: isDarkMode ? 0.25 : 0.15),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(
-                          item.category.icon,
-                          size: 18,
-                          color: item.category.color,
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          item.category.displayName,
-                          style: TextStyle(
-                            color: item.category.color,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Text(
-                    '${item.price.toStringAsFixed(2)} €',
-                    style: theme.textTheme.headlineSmall?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: theme.colorScheme.primary,
-                    ),
-                  ),
-                ],
-              ),
-
-              // Item Name & Prompt
-              Column(
-                children: [
-                  Text(
-                    item.name,
-                    textAlign: TextAlign.center,
-                    style: theme.textTheme.headlineMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Did you use this item during ${Item.currentMonthKey}?',
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: isDarkMode ? Colors.grey.shade400 : Colors.grey.shade600,
-                    ),
-                  ),
-                ],
-              ),
-
-              // Cost Impact Box
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: Column(
+          padding: const EdgeInsets.all(20.0),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Header Category Badge
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text('Goal duration:', style: theme.textTheme.bodyMedium),
-                        Text(
-                          '${item.goalDurationMonths} mo (${item.goalPricePerMonth.toStringAsFixed(2)} €/mo)',
-                          style: const TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text('Current used duration:', style: theme.textTheme.bodyMedium),
-                        Text(
-                          '${item.usedDurationMonths} mo ($currentCostPerMo)',
-                          style: const TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                      ],
-                    ),
-                    const Divider(height: 16),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Row(
-                          children: [
-                            Icon(
-                              Icons.trending_down,
-                              size: 18,
-                              color: isDarkMode ? Colors.green.shade300 : Colors.green.shade700,
-                            ),
-                            const SizedBox(width: 4),
-                            Text('If used (+1 mo):', style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.bold)),
-                          ],
-                        ),
-                        Text(
-                          '$nextUsedDuration mo → $newCostPerMo',
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            color: isDarkMode ? Colors.green.shade300 : Colors.green.shade700,
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: item.category.color.withValues(alpha: isDarkMode ? 0.25 : 0.15),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            item.category.icon,
+                            size: 16,
+                            color: item.category.color,
                           ),
-                        ),
-                      ],
+                          const SizedBox(width: 6),
+                          Text(
+                            item.category.displayName,
+                            style: TextStyle(
+                              color: item.category.color,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Text(
+                      '${item.price.toStringAsFixed(2)} €',
+                      style: theme.textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: theme.colorScheme.primary,
+                      ),
                     ),
                   ],
                 ),
-              ),
-            ],
+                const SizedBox(height: 16),
+
+                // Item Name & Prompt
+                Text(
+                  item.name,
+                  textAlign: TextAlign.center,
+                  style: theme.textTheme.headlineMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  'Did you use this item during ${Item.currentMonthKey}?',
+                  textAlign: TextAlign.center,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: isDarkMode ? Colors.grey.shade400 : Colors.grey.shade600,
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                // Cost Impact Box
+                Container(
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Column(
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text('Goal duration:', style: theme.textTheme.bodyMedium),
+                          Flexible(
+                            child: Text(
+                              '${item.goalDurationMonths} mo (${item.goalPricePerMonth.toStringAsFixed(2)} €/mo)',
+                              textAlign: TextAlign.end,
+                              style: const TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 6),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text('Current used:', style: theme.textTheme.bodyMedium),
+                          Flexible(
+                            child: Text(
+                              '${item.usedDurationMonths} mo ($currentCostPerMo)',
+                              textAlign: TextAlign.end,
+                              style: const TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const Divider(height: 14),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Row(
+                            children: [
+                              Icon(
+                                Icons.trending_down,
+                                size: 16,
+                                color: isDarkMode ? Colors.green.shade300 : Colors.green.shade700,
+                              ),
+                              const SizedBox(width: 4),
+                              Text('If used (+1 mo):', style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.bold)),
+                            ],
+                          ),
+                          Flexible(
+                            child: Text(
+                              '$nextUsedDuration mo → $newCostPerMo',
+                              textAlign: TextAlign.end,
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: isDarkMode ? Colors.green.shade300 : Colors.green.shade700,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),

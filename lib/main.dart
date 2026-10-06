@@ -325,11 +325,15 @@ class _HomeScreenState extends State<HomeScreen> {
                   const Icon(Icons.local_fire_department, color: Colors.orangeAccent),
             ),
             const SizedBox(width: 8),
-            Text(
-              _appBarTitle,
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                color: theme.colorScheme.onSurface,
+            Expanded(
+              child: Text(
+                _appBarTitle,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: theme.colorScheme.onSurface,
+                ),
               ),
             ),
           ],

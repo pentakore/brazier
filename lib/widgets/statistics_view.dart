@@ -18,23 +18,26 @@ class StatisticsView extends StatelessWidget {
 
     if (items.isEmpty) {
       return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.bar_chart_rounded,
-              size: 64,
-              color: theme.colorScheme.outline,
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'No statistics available yet.\nAdd items to see your cost analysis!',
-              textAlign: TextAlign.center,
-              style: theme.textTheme.bodyLarge?.copyWith(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.bar_chart_rounded,
+                size: 64,
                 color: theme.colorScheme.outline,
               ),
-            ),
-          ],
+              const SizedBox(height: 16),
+              Text(
+                'No statistics available yet.\nAdd items to see your cost analysis!',
+                textAlign: TextAlign.center,
+                style: theme.textTheme.bodyLarge?.copyWith(
+                  color: theme.colorScheme.outline,
+                ),
+              ),
+            ],
+          ),
         ),
       );
     }
@@ -75,10 +78,14 @@ class StatisticsView extends StatelessWidget {
                       children: [
                         Icon(Icons.stars_rounded, color: theme.colorScheme.primary),
                         const SizedBox(width: 8),
-                        Text(
-                          'Goal Achievement Status',
-                          style: theme.textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.bold,
+                        Expanded(
+                          child: Text(
+                            'Goal Achievement Status',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: theme.textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                         ),
                       ],
@@ -179,16 +186,22 @@ class StatisticsView extends StatelessWidget {
                           Expanded(
                             child: Text(
                               category.displayName,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                               style: theme.textTheme.titleMedium?.copyWith(
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
                           ),
-                          Text(
-                            '${categoryTotal.toStringAsFixed(2)} €',
-                            style: theme.textTheme.titleMedium?.copyWith(
-                              fontWeight: FontWeight.bold,
-                              color: catColor,
+                          const SizedBox(width: 8),
+                          FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: Text(
+                              '${categoryTotal.toStringAsFixed(2)} €',
+                              style: theme.textTheme.titleMedium?.copyWith(
+                                fontWeight: FontWeight.bold,
+                                color: catColor,
+                              ),
                             ),
                           ),
                         ],
@@ -197,16 +210,24 @@ class StatisticsView extends StatelessWidget {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text(
-                            '${catItems.length} ${catItems.length == 1 ? 'item' : 'items'} (${(categoryPercentage * 100).toStringAsFixed(0)}% of total)',
-                            style: theme.textTheme.bodySmall?.copyWith(
-                              color: isDarkMode ? Colors.grey.shade400 : Colors.grey.shade700,
+                          Flexible(
+                            child: Text(
+                              '${catItems.length} ${catItems.length == 1 ? 'item' : 'items'} (${(categoryPercentage * 100).toStringAsFixed(0)}% of total)',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: isDarkMode ? Colors.grey.shade400 : Colors.grey.shade700,
+                              ),
                             ),
                           ),
-                          Text(
-                            'Goal: ${categoryGoalRate.toStringAsFixed(2)} €/mo',
-                            style: theme.textTheme.bodySmall?.copyWith(
-                              fontWeight: FontWeight.w600,
+                          const SizedBox(width: 8),
+                          FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: Text(
+                              'Goal: ${categoryGoalRate.toStringAsFixed(2)} €/mo',
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                fontWeight: FontWeight.w600,
+                              ),
                             ),
                           ),
                         ],
@@ -231,11 +252,14 @@ class StatisticsView extends StatelessWidget {
                               color: isDarkMode ? Colors.grey.shade400 : Colors.grey.shade600,
                             ),
                           ),
-                          Text(
-                            '${categoryUsedRate.toStringAsFixed(2)} € / mo',
-                            style: theme.textTheme.bodySmall?.copyWith(
-                              fontWeight: FontWeight.bold,
-                              color: theme.colorScheme.primary,
+                          FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: Text(
+                              '${categoryUsedRate.toStringAsFixed(2)} € / mo',
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                fontWeight: FontWeight.bold,
+                                color: theme.colorScheme.primary,
+                              ),
                             ),
                           ),
                         ],
@@ -277,27 +301,33 @@ class _StatusStatBox extends StatelessWidget {
       child: Row(
         children: [
           Icon(icon, color: color, size: 28),
-          const SizedBox(width: 10),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                '$count',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: color,
+          const SizedBox(width: 8),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '$count',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: color,
+                  ),
                 ),
-              ),
-              Text(
-                title,
-                style: TextStyle(
-                  fontSize: 12,
-                  color: color.withValues(alpha: 0.9),
-                  fontWeight: FontWeight.w500,
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    title,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: color.withValues(alpha: 0.9),
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ],
       ),
