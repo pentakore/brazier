@@ -1,4 +1,5 @@
 import 'dart:math';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 
 import '../models/item.dart';
@@ -179,14 +180,29 @@ class _ReviewViewState extends State<ReviewView> {
               fit: StackFit.expand,
               clipBehavior: Clip.none,
               children: [
-                // Next Card in background (if available)
+                // 2nd Background Card (deepest, if 3+ pending items)
+                if (pending.length > 2)
+                  Transform.scale(
+                    scale: 0.88,
+                    child: Transform.translate(
+                      offset: const Offset(0, 26),
+                      child: Opacity(
+                        opacity: 0.4,
+                        child: _ReviewCardContent(
+                          item: pending[(_currentIndex + 2) % pending.length],
+                        ),
+                      ),
+                    ),
+                  ),
+
+                // 1st Background Card (middle, if 2+ pending items)
                 if (pending.length > 1)
                   Transform.scale(
                     scale: 0.94,
                     child: Transform.translate(
-                      offset: const Offset(0, 14),
+                      offset: const Offset(0, 13),
                       child: Opacity(
-                        opacity: 0.6,
+                        opacity: 1,
                         child: _ReviewCardContent(
                           item: pending[(_currentIndex + 1) % pending.length],
                         ),
@@ -195,98 +211,117 @@ class _ReviewViewState extends State<ReviewView> {
                   ),
 
                 // Top Interactive Swipable Card
-                GestureDetector(
-                  onPanUpdate: (details) {
-                    setState(() {
-                      _dragOffset += details.delta;
-                    });
-                  },
-                  onPanEnd: (_) {
-                    final dx = _dragOffset.dx;
-                    final dy = _dragOffset.dy;
+                Listener(
+                  onPointerSignal: (pointerSignal) {
+                    if (pointerSignal is PointerScrollEvent) {
+                      final dx = pointerSignal.scrollDelta.dx;
+                      final dy = pointerSignal.scrollDelta.dy;
 
-                    if (dx > screenWidth * 0.25) {
-                      // Swiped Right -> Used!
-                      _handleReview(currentItem, true);
-                    } else if (dx < -screenWidth * 0.25) {
-                      // Swiped Left -> Not Used!
-                      _handleReview(currentItem, false);
-                    } else if (dy < -80) {
-                      // Swiped Up -> Next item
-                      _nextItem();
-                    } else if (dy > 80) {
-                      // Swiped Down -> Previous item
-                      _previousItem();
-                    } else {
-                      // Reset card position
-                      setState(() {
-                        _dragOffset = Offset.zero;
-                      });
+                      if (dx > 30) {
+                        _handleReview(currentItem, true);
+                      } else if (dx < -30) {
+                        _handleReview(currentItem, false);
+                      } else if (dy > 30) {
+                        _nextItem();
+                      } else if (dy < -30) {
+                        //_previousItem();
+                        _nextItem();
+                      }
                     }
                   },
-                  child: Transform.translate(
-                    offset: _dragOffset,
-                    child: Transform.rotate(
-                      angle: (_dragOffset.dx / screenWidth) * (pi / 8),
-                      child: Stack(
-                        fit: StackFit.expand,
-                        children: [
-                          _ReviewCardContent(item: currentItem),
+                  child: GestureDetector(
+                    onPanUpdate: (details) {
+                      setState(() {
+                        _dragOffset += details.delta;
+                      });
+                    },
+                    onPanEnd: (_) {
+                      final dx = _dragOffset.dx;
+                      final dy = _dragOffset.dy;
 
-                          // "USED" Stamp Overlay when dragging right
-                          if (isSwipingRight)
-                            Positioned(
-                              top: 30,
-                              left: 20,
-                              child: Transform.rotate(
-                                angle: -pi / 12,
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-                                  decoration: BoxDecoration(
-                                    border: Border.all(color: Colors.green, width: 3.5),
-                                    borderRadius: BorderRadius.circular(12),
-                                    color: Colors.green.withValues(alpha: 0.2),
-                                  ),
-                                  child: const Text(
-                                    'USED (+1 mo)',
-                                    style: TextStyle(
-                                      color: Colors.green,
-                                      fontWeight: FontWeight.w900,
-                                      fontSize: 20,
-                                      letterSpacing: 1.2,
+                      if (dx > screenWidth * 0.25) {
+                        // Swiped Right -> Used!
+                        _handleReview(currentItem, true);
+                      } else if (dx < -screenWidth * 0.25) {
+                        // Swiped Left -> Not Used!
+                        _handleReview(currentItem, false);
+                      } else if (dy < -80) {
+                        // Swiped Up -> Next item
+                        _nextItem();
+                      } else if (dy > 80) {
+                        // Swiped Down -> Also  next item
+                        _nextItem();
+                      } else {
+                        // Reset card position
+                        setState(() {
+                          _dragOffset = Offset.zero;
+                        });
+                      }
+                    },
+                    child: Transform.translate(
+                      offset: _dragOffset,
+                      child: Transform.rotate(
+                        angle: (_dragOffset.dx / screenWidth) * (pi / 8),
+                        child: Stack(
+                          fit: StackFit.expand,
+                          children: [
+                            _ReviewCardContent(item: currentItem),
+
+                            // "USED" Stamp Overlay when dragging right
+                            if (isSwipingRight)
+                              Positioned(
+                                top: 30,
+                                left: 20,
+                                child: Transform.rotate(
+                                  angle: -pi / 12,
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                                    decoration: BoxDecoration(
+                                      border: Border.all(color: Colors.green, width: 3.5),
+                                      borderRadius: BorderRadius.circular(12),
+                                      color: Colors.green.withValues(alpha: 0.2),
+                                    ),
+                                    child: const Text(
+                                      'USED (+1 mo)',
+                                      style: TextStyle(
+                                        color: Colors.green,
+                                        fontWeight: FontWeight.w900,
+                                        fontSize: 20,
+                                        letterSpacing: 1.2,
+                                      ),
                                     ),
                                   ),
                                 ),
                               ),
-                            ),
 
-                          // "NOT USED" Stamp Overlay when dragging left
-                          if (isSwipingLeft)
-                            Positioned(
-                              top: 30,
-                              right: 20,
-                              child: Transform.rotate(
-                                angle: pi / 12,
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-                                  decoration: BoxDecoration(
-                                    border: Border.all(color: Colors.red, width: 3.5),
-                                    borderRadius: BorderRadius.circular(12),
-                                    color: Colors.red.withValues(alpha: 0.2),
-                                  ),
-                                  child: const Text(
-                                    'NOT USED',
-                                    style: TextStyle(
-                                      color: Colors.red,
-                                      fontWeight: FontWeight.w900,
-                                      fontSize: 20,
-                                      letterSpacing: 1.2,
+                            // "NOT USED" Stamp Overlay when dragging left
+                            if (isSwipingLeft)
+                              Positioned(
+                                top: 30,
+                                right: 20,
+                                child: Transform.rotate(
+                                  angle: pi / 12,
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                                    decoration: BoxDecoration(
+                                      border: Border.all(color: Colors.red, width: 3.5),
+                                      borderRadius: BorderRadius.circular(12),
+                                      color: Colors.red.withValues(alpha: 0.2),
+                                    ),
+                                    child: const Text(
+                                      'NOT USED',
+                                      style: TextStyle(
+                                        color: Colors.red,
+                                        fontWeight: FontWeight.w900,
+                                        fontSize: 20,
+                                        letterSpacing: 1.2,
+                                      ),
                                     ),
                                   ),
                                 ),
                               ),
-                            ),
-                        ],
+                          ],
+                        ),
                       ),
                     ),
                   ),
@@ -333,13 +368,13 @@ class _ReviewViewState extends State<ReviewView> {
               // Up/Down Navigation Buttons
               IconButton.filledTonal(
                 visualDensity: VisualDensity.compact,
-                tooltip: 'Previous Item (Swipe Down)',
+                tooltip: 'Previous Item',
                 icon: const Icon(Icons.arrow_upward, size: 20),
                 onPressed: _previousItem,
               ),
               IconButton.filledTonal(
                 visualDensity: VisualDensity.compact,
-                tooltip: 'Next Item (Swipe Up)',
+                tooltip: 'Next Item (swipe up/down)',
                 icon: const Icon(Icons.arrow_downward, size: 20),
                 onPressed: _nextItem,
               ),
@@ -406,7 +441,7 @@ class _ReviewCardContent extends StatelessWidget {
         child: LayoutBuilder(
           builder: (context, constraints) {
             return SingleChildScrollView(
-              physics: const AlwaysScrollableScrollPhysics(),
+              physics: const NeverScrollableScrollPhysics(),
               child: ConstrainedBox(
                 constraints: BoxConstraints(minHeight: constraints.maxHeight),
                 child: IntrinsicHeight(
