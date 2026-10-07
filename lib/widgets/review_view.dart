@@ -188,7 +188,7 @@ class _ReviewViewState extends State<ReviewView> {
                       scaleX: 0.90,
                       scaleY: 1.0,
                       child: Transform.translate(
-                        offset: const Offset(0, 28),
+                        offset: const Offset(0, 26),
                         child: _ReviewCardContent(
                           item: pending[(_currentIndex + 2) % pending.length],
                         ),
@@ -432,7 +432,7 @@ class _ReviewCardContent extends StatelessWidget {
     final newCostPerMo = '${(item.price / nextUsedDuration).toStringAsFixed(2)} €/mo';
 
     return Card(
-      elevation: 6,
+      elevation: 3,
       margin: EdgeInsets.zero,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(24),
