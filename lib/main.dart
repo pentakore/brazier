@@ -31,30 +31,42 @@ class _BrazierAppState extends State<BrazierApp> {
   Widget build(BuildContext context) {
     final seedColor = const Color(0xFF5C6BC0);
 
+    final lightColorScheme = ColorScheme.fromSeed(
+      seedColor: seedColor,
+      brightness: Brightness.light,
+    );
+
+    final darkColorScheme = ColorScheme.fromSeed(
+      seedColor: seedColor,
+      brightness: Brightness.dark,
+    );
+
     return MaterialApp(
       title: 'Brazier - Item Cost Tracker',
       debugShowCheckedModeBanner: false,
       themeMode: _themeMode,
       theme: ThemeData(
         useMaterial3: true,
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: seedColor,
-          brightness: Brightness.light,
-        ),
-        appBarTheme: const AppBarTheme(
+        colorScheme: lightColorScheme,
+        scaffoldBackgroundColor: lightColorScheme.surface,
+        appBarTheme: AppBarTheme(
           centerTitle: false,
           elevation: 0,
+          scrolledUnderElevation: 0.0,
+          surfaceTintColor: Colors.transparent,
+          backgroundColor: lightColorScheme.surface,
         ),
       ),
       darkTheme: ThemeData(
         useMaterial3: true,
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: seedColor,
-          brightness: Brightness.dark,
-        ),
-        appBarTheme: const AppBarTheme(
+        colorScheme: darkColorScheme,
+        scaffoldBackgroundColor: darkColorScheme.surface,
+        appBarTheme: AppBarTheme(
           centerTitle: false,
           elevation: 0,
+          scrolledUnderElevation: 0.0,
+          surfaceTintColor: Colors.transparent,
+          backgroundColor: darkColorScheme.surface,
         ),
       ),
       home: HomeScreen(
@@ -315,6 +327,10 @@ class _HomeScreenState extends State<HomeScreen> {
 
     return Scaffold(
       appBar: AppBar(
+        backgroundColor: theme.colorScheme.surface,
+        scrolledUnderElevation: 0.0,
+        surfaceTintColor: Colors.transparent,
+        notificationPredicate: (ScrollNotification notification) => false,
         title: Row(
           children: [
             Image.asset(
