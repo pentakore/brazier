@@ -176,42 +176,40 @@ class _ReviewViewState extends State<ReviewView> {
 
           // Swipe Card Stack Area
           Expanded(
-            child: Stack(
-              fit: StackFit.expand,
-              clipBehavior: Clip.none,
-              children: [
-                // 2nd Background Card (deepest, if 3+ pending items)
-                if (pending.length > 2)
-                  Transform.scale(
-                    scale: 0.88,
-                    child: Transform.translate(
-                      offset: const Offset(0, 26),
-                      child: Opacity(
-                        opacity: 0.4,
+            child: Padding(
+              padding: const EdgeInsets.only(bottom: 28.0),
+              child: Stack(
+                fit: StackFit.expand,
+                clipBehavior: Clip.none,
+                children: [
+                  // 2nd Background Card (deepest, if 3+ pending items)
+                  if (pending.length > 2)
+                    Transform.scale(
+                      scaleX: 0.90,
+                      scaleY: 1.0,
+                      child: Transform.translate(
+                        offset: const Offset(0, 28),
                         child: _ReviewCardContent(
                           item: pending[(_currentIndex + 2) % pending.length],
                         ),
                       ),
                     ),
-                  ),
 
-                // 1st Background Card (middle, if 2+ pending items)
-                if (pending.length > 1)
-                  Transform.scale(
-                    scale: 0.94,
-                    child: Transform.translate(
-                      offset: const Offset(0, 13),
-                      child: Opacity(
-                        opacity: 1,
+                  // 1st Background Card (middle, if 2+ pending items)
+                  if (pending.length > 1)
+                    Transform.scale(
+                      scaleX: 0.95,
+                      scaleY: 1.0,
+                      child: Transform.translate(
+                        offset: const Offset(0, 14),
                         child: _ReviewCardContent(
                           item: pending[(_currentIndex + 1) % pending.length],
                         ),
                       ),
                     ),
-                  ),
 
-                // Top Interactive Swipable Card
-                Listener(
+                  // Top Interactive Swipable Card
+                  Listener(
                   onPointerSignal: (pointerSignal) {
                     if (pointerSignal is PointerScrollEvent) {
                       final dx = pointerSignal.scrollDelta.dx;
@@ -329,7 +327,8 @@ class _ReviewViewState extends State<ReviewView> {
               ],
             ),
           ),
-          const SizedBox(height: 12),
+        ),
+        const SizedBox(height: 12),
 
           // Action Buttons Bar
           Row(
