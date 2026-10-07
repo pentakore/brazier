@@ -175,124 +175,123 @@ class _ReviewViewState extends State<ReviewView> {
 
           // Swipe Card Stack Area
           Expanded(
-            child: Center(
-              child: Stack(
-                alignment: Alignment.center,
-                clipBehavior: Clip.none,
-                children: [
-                  // Next Card in background (if available)
-                  if (pending.length > 1)
-                    Transform.scale(
-                      scale: 0.94,
-                      child: Transform.translate(
-                        offset: const Offset(0, 14),
-                        child: Opacity(
-                          opacity: 0.6,
-                          child: _ReviewCardContent(
-                            item: pending[(_currentIndex + 1) % pending.length],
-                          ),
-                        ),
-                      ),
-                    ),
-
-                  // Top Interactive Swipable Card
-                  GestureDetector(
-                    onPanUpdate: (details) {
-                      setState(() {
-                        _dragOffset += details.delta;
-                      });
-                    },
-                    onPanEnd: (_) {
-                      final dx = _dragOffset.dx;
-                      final dy = _dragOffset.dy;
-
-                      if (dx > screenWidth * 0.25) {
-                        // Swiped Right -> Used!
-                        _handleReview(currentItem, true);
-                      } else if (dx < -screenWidth * 0.25) {
-                        // Swiped Left -> Not Used!
-                        _handleReview(currentItem, false);
-                      } else if (dy < -80) {
-                        // Swiped Up -> Next item
-                        _nextItem();
-                      } else if (dy > 80) {
-                        // Swiped Down -> Previous item
-                        _previousItem();
-                      } else {
-                        // Reset card position
-                        setState(() {
-                          _dragOffset = Offset.zero;
-                        });
-                      }
-                    },
+            child: Stack(
+              fit: StackFit.expand,
+              clipBehavior: Clip.none,
+              children: [
+                // Next Card in background (if available)
+                if (pending.length > 1)
+                  Transform.scale(
+                    scale: 0.94,
                     child: Transform.translate(
-                      offset: _dragOffset,
-                      child: Transform.rotate(
-                        angle: (_dragOffset.dx / screenWidth) * (pi / 8),
-                        child: Stack(
-                          children: [
-                            _ReviewCardContent(item: currentItem),
-
-                            // "USED" Stamp Overlay when dragging right
-                            if (isSwipingRight)
-                              Positioned(
-                                top: 30,
-                                left: 20,
-                                child: Transform.rotate(
-                                  angle: -pi / 12,
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-                                    decoration: BoxDecoration(
-                                      border: Border.all(color: Colors.green, width: 3.5),
-                                      borderRadius: BorderRadius.circular(12),
-                                      color: Colors.green.withValues(alpha: 0.2),
-                                    ),
-                                    child: const Text(
-                                      'USED (+1 mo)',
-                                      style: TextStyle(
-                                        color: Colors.green,
-                                        fontWeight: FontWeight.w900,
-                                        fontSize: 20,
-                                        letterSpacing: 1.2,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ),
-
-                            // "NOT USED" Stamp Overlay when dragging left
-                            if (isSwipingLeft)
-                              Positioned(
-                                top: 30,
-                                right: 20,
-                                child: Transform.rotate(
-                                  angle: pi / 12,
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-                                    decoration: BoxDecoration(
-                                      border: Border.all(color: Colors.red, width: 3.5),
-                                      borderRadius: BorderRadius.circular(12),
-                                      color: Colors.red.withValues(alpha: 0.2),
-                                    ),
-                                    child: const Text(
-                                      'NOT USED',
-                                      style: TextStyle(
-                                        color: Colors.red,
-                                        fontWeight: FontWeight.w900,
-                                        fontSize: 20,
-                                        letterSpacing: 1.2,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                          ],
+                      offset: const Offset(0, 14),
+                      child: Opacity(
+                        opacity: 0.6,
+                        child: _ReviewCardContent(
+                          item: pending[(_currentIndex + 1) % pending.length],
                         ),
                       ),
                     ),
                   ),
-                ],
-              ),
+
+                // Top Interactive Swipable Card
+                GestureDetector(
+                  onPanUpdate: (details) {
+                    setState(() {
+                      _dragOffset += details.delta;
+                    });
+                  },
+                  onPanEnd: (_) {
+                    final dx = _dragOffset.dx;
+                    final dy = _dragOffset.dy;
+
+                    if (dx > screenWidth * 0.25) {
+                      // Swiped Right -> Used!
+                      _handleReview(currentItem, true);
+                    } else if (dx < -screenWidth * 0.25) {
+                      // Swiped Left -> Not Used!
+                      _handleReview(currentItem, false);
+                    } else if (dy < -80) {
+                      // Swiped Up -> Next item
+                      _nextItem();
+                    } else if (dy > 80) {
+                      // Swiped Down -> Previous item
+                      _previousItem();
+                    } else {
+                      // Reset card position
+                      setState(() {
+                        _dragOffset = Offset.zero;
+                      });
+                    }
+                  },
+                  child: Transform.translate(
+                    offset: _dragOffset,
+                    child: Transform.rotate(
+                      angle: (_dragOffset.dx / screenWidth) * (pi / 8),
+                      child: Stack(
+                        fit: StackFit.expand,
+                        children: [
+                          _ReviewCardContent(item: currentItem),
+
+                          // "USED" Stamp Overlay when dragging right
+                          if (isSwipingRight)
+                            Positioned(
+                              top: 30,
+                              left: 20,
+                              child: Transform.rotate(
+                                angle: -pi / 12,
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                                  decoration: BoxDecoration(
+                                    border: Border.all(color: Colors.green, width: 3.5),
+                                    borderRadius: BorderRadius.circular(12),
+                                    color: Colors.green.withValues(alpha: 0.2),
+                                  ),
+                                  child: const Text(
+                                    'USED (+1 mo)',
+                                    style: TextStyle(
+                                      color: Colors.green,
+                                      fontWeight: FontWeight.w900,
+                                      fontSize: 20,
+                                      letterSpacing: 1.2,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+
+                          // "NOT USED" Stamp Overlay when dragging left
+                          if (isSwipingLeft)
+                            Positioned(
+                              top: 30,
+                              right: 20,
+                              child: Transform.rotate(
+                                angle: pi / 12,
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                                  decoration: BoxDecoration(
+                                    border: Border.all(color: Colors.red, width: 3.5),
+                                    borderRadius: BorderRadius.circular(12),
+                                    color: Colors.red.withValues(alpha: 0.2),
+                                  ),
+                                  child: const Text(
+                                    'NOT USED',
+                                    style: TextStyle(
+                                      color: Colors.red,
+                                      fontWeight: FontWeight.w900,
+                                      fontSize: 20,
+                                      letterSpacing: 1.2,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
           const SizedBox(height: 12),
@@ -395,148 +394,161 @@ class _ReviewCardContent extends StatelessWidget {
         : 'N/A';
     final newCostPerMo = '${(item.price / nextUsedDuration).toStringAsFixed(2)} €/mo';
 
-    return SizedBox(
-      width: double.infinity,
-      child: Card(
-        elevation: 6,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(24),
-          side: BorderSide(color: theme.colorScheme.outlineVariant, width: 1.5),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(20.0),
-          child: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // Header Category Badge
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: item.category.color.withValues(alpha: isDarkMode ? 0.25 : 0.15),
-                        borderRadius: BorderRadius.circular(20),
+    return Card(
+      elevation: 6,
+      margin: EdgeInsets.zero,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(24),
+        side: BorderSide(color: theme.colorScheme.outlineVariant, width: 1.5),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(20.0),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            return SingleChildScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              child: ConstrainedBox(
+                constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                child: IntrinsicHeight(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      // Header Category Badge & Price
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: item.category.color.withValues(alpha: isDarkMode ? 0.25 : 0.15),
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  item.category.icon,
+                                  size: 16,
+                                  color: item.category.color,
+                                ),
+                                const SizedBox(width: 6),
+                                Text(
+                                  item.category.displayName,
+                                  style: TextStyle(
+                                    color: item.category.color,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 12,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Text(
+                            '${item.price.toStringAsFixed(2)} €',
+                            style: theme.textTheme.titleLarge?.copyWith(
+                              fontWeight: FontWeight.bold,
+                              color: theme.colorScheme.primary,
+                            ),
+                          ),
+                        ],
                       ),
-                      child: Row(
+                      const SizedBox(height: 12),
+
+                      // Item Name & Prompt
+                      Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(
-                            item.category.icon,
-                            size: 16,
-                            color: item.category.color,
-                          ),
-                          const SizedBox(width: 6),
                           Text(
-                            item.category.displayName,
-                            style: TextStyle(
-                              color: item.category.color,
+                            item.name,
+                            textAlign: TextAlign.center,
+                            style: theme.textTheme.headlineMedium?.copyWith(
                               fontWeight: FontWeight.bold,
-                              fontSize: 12,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Did you use this item during ${Item.currentMonthKey}?',
+                            textAlign: TextAlign.center,
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              color: isDarkMode ? Colors.grey.shade400 : Colors.grey.shade600,
                             ),
                           ),
                         ],
                       ),
-                    ),
-                    Text(
-                      '${item.price.toStringAsFixed(2)} €',
-                      style: theme.textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: theme.colorScheme.primary,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
+                      const SizedBox(height: 12),
 
-                // Item Name & Prompt
-                Text(
-                  item.name,
-                  textAlign: TextAlign.center,
-                  style: theme.textTheme.headlineMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  'Did you use this item during ${Item.currentMonthKey}?',
-                  textAlign: TextAlign.center,
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: isDarkMode ? Colors.grey.shade400 : Colors.grey.shade600,
-                  ),
-                ),
-                const SizedBox(height: 16),
-
-                // Cost Impact Box
-                Container(
-                  padding: const EdgeInsets.all(14),
-                  decoration: BoxDecoration(
-                    color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: Column(
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text('Goal duration:', style: theme.textTheme.bodyMedium),
-                          Flexible(
-                            child: Text(
-                              '${item.goalDurationMonths} mo (${item.goalPricePerMonth.toStringAsFixed(2)} €/mo)',
-                              textAlign: TextAlign.end,
-                              style: const TextStyle(fontWeight: FontWeight.bold),
+                      // Cost Impact Box
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: Column(
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text('Goal duration:', style: theme.textTheme.bodyMedium),
+                                Flexible(
+                                  child: Text(
+                                    '${item.goalDurationMonths} mo (${item.goalPricePerMonth.toStringAsFixed(2)} €/mo)',
+                                    textAlign: TextAlign.end,
+                                    style: const TextStyle(fontWeight: FontWeight.bold),
+                                  ),
+                                ),
+                              ],
                             ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 6),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text('Current used:', style: theme.textTheme.bodyMedium),
-                          Flexible(
-                            child: Text(
-                              '${item.usedDurationMonths} mo ($currentCostPerMo)',
-                              textAlign: TextAlign.end,
-                              style: const TextStyle(fontWeight: FontWeight.bold),
+                            const SizedBox(height: 8),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text('Current used:', style: theme.textTheme.bodyMedium),
+                                Flexible(
+                                  child: Text(
+                                    '${item.usedDurationMonths} mo ($currentCostPerMo)',
+                                    textAlign: TextAlign.end,
+                                    style: const TextStyle(fontWeight: FontWeight.bold),
+                                  ),
+                                ),
+                              ],
                             ),
-                          ),
-                        ],
-                      ),
-                      const Divider(height: 14),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Row(
-                            children: [
-                              Icon(
-                                Icons.trending_down,
-                                size: 16,
-                                color: isDarkMode ? Colors.green.shade300 : Colors.green.shade700,
-                              ),
-                              const SizedBox(width: 4),
-                              Text('If used (+1 mo):', style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.bold)),
-                            ],
-                          ),
-                          Flexible(
-                            child: Text(
-                              '$nextUsedDuration mo → $newCostPerMo',
-                              textAlign: TextAlign.end,
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                color: isDarkMode ? Colors.green.shade300 : Colors.green.shade700,
-                              ),
+                            const Divider(height: 16),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Row(
+                                  children: [
+                                    Icon(
+                                      Icons.trending_down,
+                                      size: 16,
+                                      color: isDarkMode ? Colors.green.shade300 : Colors.green.shade700,
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Text('If used (+1 mo):', style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.bold)),
+                                  ],
+                                ),
+                                Flexible(
+                                  child: Text(
+                                    '$nextUsedDuration mo → $newCostPerMo',
+                                    textAlign: TextAlign.end,
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      color: isDarkMode ? Colors.green.shade300 : Colors.green.shade700,
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                     ],
                   ),
                 ),
-              ],
-            ),
-          ),
+              ),
+            );
+          },
         ),
       ),
     );
