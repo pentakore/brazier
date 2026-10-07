@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 
 import 'models/item.dart';
 import 'widgets/category_manager_dialog.dart';
-import 'widgets/item_card.dart';
 import 'widgets/item_dialog.dart';
+import 'widgets/items_view.dart';
 import 'widgets/review_view.dart';
 import 'widgets/statistics_view.dart';
 
@@ -521,141 +521,31 @@ class _HomeScreenState extends State<HomeScreen> {
           index: _currentTabIndex,
           children: [
             // TAB 0: Items List View
-            Column(
-              children: [
-                const SizedBox(height: 12),
-                // Search & Category Filter Section
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                  child: Column(
-                    children: [
-                      // Search Bar
-                      TextField(
-                        decoration: InputDecoration(
-                          hintText: 'Search items...',
-                          prefixIcon: const Icon(Icons.search),
-                          suffixIcon: _searchQuery.isNotEmpty
-                              ? IconButton(
-                                  icon: const Icon(Icons.clear),
-                                  onPressed: () => setState(() => _searchQuery = ''),
-                                )
-                              : null,
-                          filled: true,
-                          fillColor: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
-                          contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 16),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide.none,
-                          ),
-                        ),
-                        onChanged: (value) {
-                          setState(() {
-                            _searchQuery = value;
-                          });
-                        },
-                      ),
-                      const SizedBox(height: 10),
-
-                      // Category Filter Chips & Category Manager Button
-                      SingleChildScrollView(
-                        scrollDirection: Axis.horizontal,
-                        child: Row(
-                          children: [
-                            FilterChip(
-                              label: const Text('All Categories'),
-                              selected: _selectedCategoryFilter == null && !_showOnlyGoalReached,
-                              onSelected: (selected) {
-                                if (selected) {
-                                  setState(() {
-                                    _selectedCategoryFilter = null;
-                                    _showOnlyGoalReached = false;
-                                  });
-                                }
-                              },
-                            ),
-                            const SizedBox(width: 8),
-                            FilterChip(
-                              avatar: const Icon(Icons.check_circle_outline, size: 16),
-                              label: const Text('Goal Reached'),
-                              selected: _showOnlyGoalReached,
-                              onSelected: (selected) {
-                                setState(() {
-                                  _showOnlyGoalReached = selected;
-                                });
-                              },
-                            ),
-                            const SizedBox(width: 8),
-                            ..._categories.map((cat) {
-                              final selected = _selectedCategoryFilter?.id == cat.id;
-                              return Padding(
-                                padding: const EdgeInsets.only(right: 8.0),
-                                child: FilterChip(
-                                  avatar: Icon(cat.icon, size: 16, color: selected ? null : cat.color),
-                                  label: Text(cat.displayName),
-                                  selected: selected,
-                                  onSelected: (isSelected) {
-                                    setState(() {
-                                      _selectedCategoryFilter = isSelected ? cat : null;
-                                    });
-                                  },
-                                ),
-                              );
-                            }),
-                            // Manage Categories Action Chip
-                            ActionChip(
-                              avatar: const Icon(Icons.settings, size: 16),
-                              label: const Text('Manage Categories'),
-                              onPressed: _openCategoryManager,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 12),
-
-                // Items List
-                Expanded(
-                  child: filtered.isEmpty
-                      ? Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(
-                                Icons.inventory_2_outlined,
-                                size: 64,
-                                color: theme.colorScheme.outline,
-                              ),
-                              const SizedBox(height: 16),
-                              Text(
-                                _items.isEmpty
-                                    ? 'No items tracked yet.\nTap "+" to add your first item!'
-                                    : 'No items match your filters.',
-                                textAlign: TextAlign.center,
-                                style: theme.textTheme.bodyLarge?.copyWith(
-                                  color: theme.colorScheme.outline,
-                                ),
-                              ),
-                            ],
-                          ),
-                        )
-                      : ListView.builder(
-                          itemCount: filtered.length,
-                          padding: const EdgeInsets.only(bottom: 80),
-                          itemBuilder: (context, index) {
-                            final item = filtered[index];
-                            return ItemCard(
-                              item: item,
-                              onEdit: () => _openEditDialog(item),
-                              onDelete: () => _deleteItem(item.id),
-                              onUpdateMonthlyStatus: (newStatus) =>
-                                  _updateMonthlyStatus(item, newStatus),
-                            );
-                          },
-                        ),
-                ),
-              ],
+            ItemsView(
+              items: filtered,
+              categories: _categories,
+              searchQuery: _searchQuery,
+              selectedCategoryFilter: _selectedCategoryFilter,
+              showOnlyGoalReached: _showOnlyGoalReached,
+              onSearchQueryChanged: (query) {
+                setState(() {
+                  _searchQuery = query;
+                });
+              },
+              onCategoryFilterChanged: (category) {
+                setState(() {
+                  _selectedCategoryFilter = category;
+                });
+              },
+              onGoalFilterChanged: (goalOnly) {
+                setState(() {
+                  _showOnlyGoalReached = goalOnly;
+                });
+              },
+              onOpenCategoryManager: _openCategoryManager,
+              onEditItem: _openEditDialog,
+              onDeleteItem: _deleteItem,
+              onUpdateMonthlyStatus: _updateMonthlyStatus,
             ),
 
             // TAB 1: Monthly Review View
