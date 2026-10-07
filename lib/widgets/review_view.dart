@@ -383,12 +383,15 @@ class _ReviewViewState extends State<ReviewView> {
               Flexible(
                 child: ElevatedButton.icon(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: isDarkMode ? Colors.green.shade700 : Colors.green.shade600,
-                    foregroundColor: Colors.white,
+                    backgroundColor: isDarkMode ? Colors.green.shade700.withValues(alpha: 0.4) : Colors.green.shade50,
+                    foregroundColor: isDarkMode ? Colors.white : Colors.green.shade700,
                     elevation: 2,
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(30),
+                      side: BorderSide(
+                        color: isDarkMode ? Colors.green.shade400 : Colors.green.shade600,
+                      ),
                     ),
                   ),
                   onPressed: () => _handleReview(currentItem, true),
