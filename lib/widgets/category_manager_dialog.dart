@@ -24,7 +24,7 @@ class _CategoryManagerDialogState extends State<CategoryManagerDialog> {
   void _openEditDialog([Category? category]) {
     showDialog(
       context: context,
-      builder: (context) => _CategoryEditDialog(
+      builder: (context) => CategoryEditDialog(
         category: category,
         onSave: (cat) {
           if (category != null) {
@@ -137,20 +137,21 @@ class _CategoryManagerDialogState extends State<CategoryManagerDialog> {
   }
 }
 
-class _CategoryEditDialog extends StatefulWidget {
+class CategoryEditDialog extends StatefulWidget {
   final Category? category;
   final ValueChanged<Category> onSave;
 
-  const _CategoryEditDialog({
+  const CategoryEditDialog({
+    super.key,
     this.category,
     required this.onSave,
   });
 
   @override
-  State<_CategoryEditDialog> createState() => _CategoryEditDialogState();
+  State<CategoryEditDialog> createState() => _CategoryEditDialogState();
 }
 
-class _CategoryEditDialogState extends State<_CategoryEditDialog> {
+class _CategoryEditDialogState extends State<CategoryEditDialog> {
   final _formKey = GlobalKey<FormState>();
 
   late TextEditingController _nameController;

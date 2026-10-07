@@ -359,6 +359,9 @@ class _HomeScreenState extends State<HomeScreen> {
       builder: (context) => ItemDialog(
         categories: _categories,
         onSave: _addItem,
+        onAddCategory: _addCategory,
+        onUpdateCategory: _updateCategory,
+        onDeleteCategory: _deleteCategory,
       ),
     );
   }
@@ -370,6 +373,9 @@ class _HomeScreenState extends State<HomeScreen> {
         item: item,
         categories: _categories,
         onSave: _editItem,
+        onAddCategory: _addCategory,
+        onUpdateCategory: _updateCategory,
+        onDeleteCategory: _deleteCategory,
       ),
     );
   }
@@ -434,6 +440,12 @@ class _HomeScreenState extends State<HomeScreen> {
           ],
         ),
         actions: [
+          if (_currentTabIndex == 0)
+            IconButton(
+              icon: const Icon(Icons.category_outlined),
+              tooltip: 'Manage Categories',
+              onPressed: _openCategoryManager,
+            ),
           // Theme Switcher Menu
           PopupMenuButton<ThemeMode>(
             icon: Icon(_themeIcon),
@@ -542,7 +554,6 @@ class _HomeScreenState extends State<HomeScreen> {
                   _showOnlyGoalReached = goalOnly;
                 });
               },
-              onOpenCategoryManager: _openCategoryManager,
               onEditItem: _openEditDialog,
               onDeleteItem: _deleteItem,
               onUpdateMonthlyStatus: _updateMonthlyStatus,

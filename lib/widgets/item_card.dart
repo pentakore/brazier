@@ -141,7 +141,7 @@ class ItemCard extends StatelessWidget {
                                 const Icon(Icons.rate_review_outlined, color: Colors.grey, size: 18),
                                 const SizedBox(width: 8),
                                 Text(
-                                  'Needs Review (Reappear in Review tab)',
+                                  'Needs Review',
                                   style: TextStyle(
                                     fontWeight: monthlyStatus == MonthlyReviewStatus.pending
                                         ? FontWeight.bold

@@ -17,10 +17,8 @@ class Category {
     Category(id: 'clothes', displayName: 'Clothes', icon: Icons.checkroom, color: Colors.purple),
     Category(id: 'devices', displayName: 'Devices', icon: Icons.devices, color: Colors.blue),
     Category(id: 'home', displayName: 'Home', icon: Icons.home, color: Colors.orange),
-    Category(id: 'books', displayName: 'Books', icon: Icons.menu_book, color: Colors.amber),
-    Category(id: 'vehicles', displayName: 'Vehicles', icon: Icons.directions_car, color: Colors.red),
-    Category(id: 'entertainment', displayName: 'Entertainment', icon: Icons.sports_esports, color: Colors.green),
     Category(id: 'fitness', displayName: 'Fitness & Sports', icon: Icons.fitness_center, color: Colors.teal),
+    Category(id: 'vehicles', displayName: 'Vehicles', icon: Icons.directions_car, color: Colors.red),
     Category(id: 'other', displayName: 'Other', icon: Icons.category, color: Colors.grey),
   ];
 

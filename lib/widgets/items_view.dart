@@ -12,7 +12,6 @@ class ItemsView extends StatelessWidget {
   final ValueChanged<String> onSearchQueryChanged;
   final ValueChanged<Category?> onCategoryFilterChanged;
   final ValueChanged<bool> onGoalFilterChanged;
-  final VoidCallback onOpenCategoryManager;
   final ValueChanged<Item> onEditItem;
   final ValueChanged<String> onDeleteItem;
   final Function(Item item, MonthlyReviewStatus status) onUpdateMonthlyStatus;
@@ -27,7 +26,6 @@ class ItemsView extends StatelessWidget {
     required this.onSearchQueryChanged,
     required this.onCategoryFilterChanged,
     required this.onGoalFilterChanged,
-    required this.onOpenCategoryManager,
     required this.onEditItem,
     required this.onDeleteItem,
     required this.onUpdateMonthlyStatus,
@@ -68,7 +66,7 @@ class ItemsView extends StatelessWidget {
               ),
               const SizedBox(height: 10),
 
-              // Category Filter Chips & Category Manager Button
+              // Category Filter Chips
               SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
                 child: Row(
@@ -107,12 +105,6 @@ class ItemsView extends StatelessWidget {
                         ),
                       );
                     }),
-                    // Manage Categories Action Chip
-                    ActionChip(
-                      avatar: const Icon(Icons.settings, size: 16),
-                      label: const Text('Manage Categories'),
-                      onPressed: onOpenCategoryManager,
-                    ),
                   ],
                 ),
               ),
