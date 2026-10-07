@@ -1,27 +1,50 @@
 import 'package:flutter/material.dart';
 
-enum ItemCategory {
-  clothes('Clothes', Icons.checkroom, Colors.purple),
-  devices('Devices', Icons.devices, Colors.blue),
-  home('Home', Icons.home, Colors.orange),
-  books('Books', Icons.menu_book, Colors.amber),
-  vehicles('Vehicles', Icons.directions_car, Colors.red),
-  entertainment('Entertainment', Icons.sports_esports, Colors.green),
-  fitness('Fitness & Sports', Icons.fitness_center, Colors.teal),
-  other('Other', Icons.category, Colors.grey);
+class Category {
+  final String id;
+  String displayName;
+  IconData icon;
+  Color color;
 
-  final String displayName;
-  final IconData icon;
-  final Color color;
+  Category({
+    required this.id,
+    required this.displayName,
+    required this.icon,
+    required this.color,
+  });
 
-  const ItemCategory(this.displayName, this.icon, this.color);
+  static List<Category> get defaultCategories => [
+    Category(id: 'clothes', displayName: 'Clothes', icon: Icons.checkroom, color: Colors.purple),
+    Category(id: 'devices', displayName: 'Devices', icon: Icons.devices, color: Colors.blue),
+    Category(id: 'home', displayName: 'Home', icon: Icons.home, color: Colors.orange),
+    Category(id: 'books', displayName: 'Books', icon: Icons.menu_book, color: Colors.amber),
+    Category(id: 'vehicles', displayName: 'Vehicles', icon: Icons.directions_car, color: Colors.red),
+    Category(id: 'entertainment', displayName: 'Entertainment', icon: Icons.sports_esports, color: Colors.green),
+    Category(id: 'fitness', displayName: 'Fitness & Sports', icon: Icons.fitness_center, color: Colors.teal),
+    Category(id: 'other', displayName: 'Other', icon: Icons.category, color: Colors.grey),
+  ];
 
-  static ItemCategory fromName(String name) {
-    return ItemCategory.values.firstWhere(
-      (cat) => cat.name.toLowerCase() == name.toLowerCase() || cat.displayName.toLowerCase() == name.toLowerCase(),
-      orElse: () => ItemCategory.other,
+  Category copyWith({
+    String? id,
+    String? displayName,
+    IconData? icon,
+    Color? color,
+  }) {
+    return Category(
+      id: id ?? this.id,
+      displayName: displayName ?? this.displayName,
+      icon: icon ?? this.icon,
+      color: color ?? this.color,
     );
   }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is Category && runtimeType == other.runtimeType && id == other.id;
+
+  @override
+  int get hashCode => id.hashCode;
 }
 
 enum MonthlyReviewStatus {
@@ -34,7 +57,7 @@ class Item {
   final String id;
   String name;
   double price;
-  ItemCategory category;
+  Category category;
   int goalDurationMonths;
   int usedDurationMonths;
   String? lastReviewedMonthKey;
@@ -113,7 +136,7 @@ class Item {
     String? id,
     String? name,
     double? price,
-    ItemCategory? category,
+    Category? category,
     int? goalDurationMonths,
     int? usedDurationMonths,
     String? lastReviewedMonthKey,

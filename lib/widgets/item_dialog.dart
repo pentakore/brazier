@@ -4,11 +4,13 @@ import '../models/item.dart';
 
 class ItemDialog extends StatefulWidget {
   final Item? item;
+  final List<Category> categories;
   final ValueChanged<Item> onSave;
 
   const ItemDialog({
     super.key,
     this.item,
+    required this.categories,
     required this.onSave,
   });
 
@@ -23,7 +25,7 @@ class _ItemDialogState extends State<ItemDialog> {
   late TextEditingController _priceController;
   late TextEditingController _goalDurationController;
   late TextEditingController _usedDurationController;
-  late ItemCategory _selectedCategory;
+  late Category _selectedCategory;
   late bool _isDefaultUsed;
 
   @override
@@ -40,7 +42,15 @@ class _ItemDialogState extends State<ItemDialog> {
     _usedDurationController = TextEditingController(
       text: item != null ? item.usedDurationMonths.toString() : '0',
     );
-    _selectedCategory = item?.category ?? ItemCategory.devices;
+
+    final Category initialCategory = (item != null && widget.categories.isNotEmpty)
+        ? widget.categories.firstWhere(
+            (c) => c.id == item.category.id || c.displayName == item.category.displayName,
+            orElse: () => widget.categories.first,
+          )
+        : (widget.categories.isNotEmpty ? widget.categories.first : Category.defaultCategories.first);
+
+    _selectedCategory = initialCategory;
     _isDefaultUsed = item?.isDefaultUsed ?? false;
 
     _priceController.addListener(_updateCalculations);
@@ -188,7 +198,7 @@ class _ItemDialogState extends State<ItemDialog> {
                 Wrap(
                   spacing: 8,
                   runSpacing: 8,
-                  children: ItemCategory.values.map((cat) {
+                  children: widget.categories.map((cat) {
                     final selected = _selectedCategory == cat;
                     return FilterChip(
                       selected: selected,

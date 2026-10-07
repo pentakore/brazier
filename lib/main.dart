@@ -2,6 +2,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 
 import 'models/item.dart';
+import 'widgets/category_manager_dialog.dart';
 import 'widgets/item_card.dart';
 import 'widgets/item_dialog.dart';
 import 'widgets/review_view.dart';
@@ -94,45 +95,60 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   int _currentTabIndex = 0;
 
+  // Dynamic Categories list initialized with defaults
+  late List<Category> _categories;
+
   // Initial sample items
-  final List<Item> _items = [
-    Item(
-      id: '1',
-      name: 'Smartphone',
-      price: 800.0,
-      category: ItemCategory.devices,
-      goalDurationMonths: 24,
-      usedDurationMonths: 26,
-      isDefaultUsed: true,
-    ),
-    Item(
-      id: '2',
-      name: 'Winter Jacket',
-      price: 120.0,
-      category: ItemCategory.clothes,
-      goalDurationMonths: 6,
-      usedDurationMonths: 4,
-    ),
-    Item(
-      id: '3',
-      name: 'Noise Cancelling Headphones',
-      price: 240.0,
-      category: ItemCategory.devices,
-      goalDurationMonths: 12,
-      usedDurationMonths: 12,
-    ),
-    Item(
-      id: '4',
-      name: 'Running Shoes',
-      price: 100.0,
-      category: ItemCategory.fitness,
-      goalDurationMonths: 5,
-      usedDurationMonths: 2,
-    ),
-  ];
+  late List<Item> _items;
+
+  @override
+  void initState() {
+    super.initState();
+    _categories = Category.defaultCategories;
+
+    final clothesCat = _categories.firstWhere((c) => c.id == 'clothes');
+    final devicesCat = _categories.firstWhere((c) => c.id == 'devices');
+    final fitnessCat = _categories.firstWhere((c) => c.id == 'fitness');
+
+    _items = [
+      Item(
+        id: '1',
+        name: 'Smartphone',
+        price: 800.0,
+        category: devicesCat,
+        goalDurationMonths: 24,
+        usedDurationMonths: 26,
+        isDefaultUsed: true,
+      ),
+      Item(
+        id: '2',
+        name: 'Winter Jacket',
+        price: 120.0,
+        category: clothesCat,
+        goalDurationMonths: 6,
+        usedDurationMonths: 4,
+      ),
+      Item(
+        id: '3',
+        name: 'Noise Cancelling Headphones',
+        price: 240.0,
+        category: devicesCat,
+        goalDurationMonths: 12,
+        usedDurationMonths: 12,
+      ),
+      Item(
+        id: '4',
+        name: 'Running Shoes',
+        price: 100.0,
+        category: fitnessCat,
+        goalDurationMonths: 5,
+        usedDurationMonths: 2,
+      ),
+    ];
+  }
 
   String _searchQuery = '';
-  ItemCategory? _selectedCategoryFilter;
+  Category? _selectedCategoryFilter;
   bool _showOnlyGoalReached = false;
 
   List<Item> get _filteredItems {
@@ -140,7 +156,7 @@ class _HomeScreenState extends State<HomeScreen> {
       final matchesQuery = _searchQuery.isEmpty ||
           item.name.toLowerCase().contains(_searchQuery.toLowerCase());
       final matchesCategory = _selectedCategoryFilter == null ||
-          item.category == _selectedCategoryFilter;
+          item.category.id == _selectedCategoryFilter!.id;
       final matchesGoalFilter = !_showOnlyGoalReached || item.isGoalReached;
 
       return matchesQuery && matchesCategory && matchesGoalFilter;
@@ -149,6 +165,67 @@ class _HomeScreenState extends State<HomeScreen> {
 
   int get _pendingReviewCount {
     return _items.where((i) => i.currentMonthlyStatus == MonthlyReviewStatus.pending).length;
+  }
+
+  void _addCategory(Category cat) {
+    setState(() {
+      _categories.add(cat);
+    });
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Added category "${cat.displayName}"')),
+    );
+  }
+
+  void _updateCategory(Category updatedCat) {
+    setState(() {
+      final index = _categories.indexWhere((c) => c.id == updatedCat.id);
+      if (index != -1) {
+        _categories[index] = updatedCat;
+      }
+      // Update item references so all existing items immediately reflect new name/icon/color
+      for (final item in _items) {
+        if (item.category.id == updatedCat.id) {
+          item.category = updatedCat;
+        }
+      }
+    });
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Updated category "${updatedCat.displayName}"')),
+    );
+  }
+
+  void _deleteCategory(String categoryId) {
+    if (_categories.length <= 1) return;
+    final catToDelete = _categories.firstWhere((c) => c.id == categoryId);
+
+    setState(() {
+      _categories.removeWhere((c) => c.id == categoryId);
+      final fallbackCat = _categories.first;
+      for (final item in _items) {
+        if (item.category.id == categoryId) {
+          item.category = fallbackCat;
+        }
+      }
+      if (_selectedCategoryFilter?.id == categoryId) {
+        _selectedCategoryFilter = null;
+      }
+    });
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Deleted category "${catToDelete.displayName}"')),
+    );
+  }
+
+  void _openCategoryManager() {
+    showDialog(
+      context: context,
+      builder: (context) => CategoryManagerDialog(
+        categories: _categories,
+        onAddCategory: _addCategory,
+        onUpdateCategory: _updateCategory,
+        onDeleteCategory: _deleteCategory,
+      ),
+    );
   }
 
   void _addItem(Item newItem) {
@@ -280,6 +357,7 @@ class _HomeScreenState extends State<HomeScreen> {
     showDialog(
       context: context,
       builder: (context) => ItemDialog(
+        categories: _categories,
         onSave: _addItem,
       ),
     );
@@ -290,6 +368,7 @@ class _HomeScreenState extends State<HomeScreen> {
       context: context,
       builder: (context) => ItemDialog(
         item: item,
+        categories: _categories,
         onSave: _editItem,
       ),
     );
@@ -477,7 +556,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                       const SizedBox(height: 10),
 
-                      // Category Filter Chips
+                      // Category Filter Chips & Category Manager Button
                       SingleChildScrollView(
                         scrollDirection: Axis.horizontal,
                         child: Row(
@@ -506,8 +585,8 @@ class _HomeScreenState extends State<HomeScreen> {
                               },
                             ),
                             const SizedBox(width: 8),
-                            ...ItemCategory.values.map((cat) {
-                              final selected = _selectedCategoryFilter == cat;
+                            ..._categories.map((cat) {
+                              final selected = _selectedCategoryFilter?.id == cat.id;
                               return Padding(
                                 padding: const EdgeInsets.only(right: 8.0),
                                 child: FilterChip(
@@ -522,6 +601,12 @@ class _HomeScreenState extends State<HomeScreen> {
                                 ),
                               );
                             }),
+                            // Manage Categories Action Chip
+                            ActionChip(
+                              avatar: const Icon(Icons.settings, size: 16),
+                              label: const Text('Manage Categories'),
+                              onPressed: _openCategoryManager,
+                            ),
                           ],
                         ),
                       ),

@@ -47,7 +47,7 @@ class StatisticsView extends StatelessWidget {
     final inProgress = items.where((i) => !i.isGoalReached).toList();
 
     // Group items by category
-    final Map<ItemCategory, List<Item>> categoryMap = {};
+    final Map<Category, List<Item>> categoryMap = {};
     for (final item in items) {
       categoryMap.putIfAbsent(item.category, () => []).add(item);
     }
