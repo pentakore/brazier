@@ -4,10 +4,12 @@ import '../models/item.dart';
 
 class SummaryCard extends StatelessWidget {
   final List<Item> items;
+  final VoidCallback? onTap;
 
   const SummaryCard({
     super.key,
     required this.items,
+    this.onTap,
   });
 
   @override
@@ -20,7 +22,7 @@ class SummaryCard extends StatelessWidget {
     final totalUsedPerMonth = items.fold(0.0, (sum, item) => sum + item.usedPricePerMonth);
     final reachedGoals = items.where((item) => item.isGoalReached).length;
 
-    return Container(
+    final cardContent = Container(
       margin: const EdgeInsets.all(16),
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -48,14 +50,26 @@ class SummaryCard extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Expanded(
-                child: Text(
-                  'Overview Summary',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    color: theme.colorScheme.onPrimary.withValues(alpha: 0.9),
-                    fontWeight: FontWeight.w600,
-                  ),
+                child: Row(
+                  children: [
+                    Text(
+                      'Overview Summary',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        color: theme.colorScheme.onPrimary.withValues(alpha: 0.9),
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    if (onTap != null) ...[
+                      const SizedBox(width: 4),
+                      Icon(
+                        Icons.touch_app_outlined,
+                        size: 16,
+                        color: theme.colorScheme.onPrimary.withValues(alpha: 0.8),
+                      ),
+                    ],
+                  ],
                 ),
               ),
               const SizedBox(width: 8),
@@ -169,5 +183,15 @@ class SummaryCard extends StatelessWidget {
         ],
       ),
     );
+
+    if (onTap != null) {
+      return InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(20),
+        child: cardContent,
+      );
+    }
+
+    return cardContent;
   }
 }

@@ -3,6 +3,403 @@ import 'package:flutter/material.dart';
 import '../models/item.dart';
 import 'summary_card.dart';
 
+class ItemsDetailScreen extends StatelessWidget {
+  final String title;
+  final List<Item> items;
+  final Category? category;
+
+  const ItemsDetailScreen({
+    super.key,
+    required this.title,
+    required this.items,
+    this.category,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDarkMode = theme.brightness == Brightness.dark;
+
+    return Scaffold(
+      appBar: AppBar(
+        title: Row(
+          children: [
+            if (category != null) ...[
+              CircleAvatar(
+                radius: 16,
+                backgroundColor: category!.color.withValues(alpha: isDarkMode ? 0.25 : 0.15),
+                child: Icon(category!.icon, size: 16, color: category!.color),
+              ),
+              const SizedBox(width: 10),
+            ],
+            Expanded(
+              child: Text(
+                title,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
+            ),
+          ],
+        ),
+      ),
+      body: items.isEmpty
+          ? Center(
+              child: Text(
+                'No items found in this section.',
+                style: theme.textTheme.bodyLarge?.copyWith(
+                  color: theme.colorScheme.outline,
+                ),
+              ),
+            )
+          : Column(
+              children: [
+                // Column Headers Row
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+                  child: const Row(
+                    children: [
+                      Expanded(
+                        flex: 3,
+                        child: Text(
+                          'Item',
+                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+                        ),
+                      ),
+                      SizedBox(width: 6),
+                      Expanded(
+                        flex: 2,
+                        child: Text(
+                          'Price',
+                          textAlign: TextAlign.right,
+                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+                        ),
+                      ),
+                      SizedBox(width: 6),
+                      Expanded(
+                        flex: 2,
+                        child: Text(
+                          'Target/mo',
+                          textAlign: TextAlign.right,
+                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+                        ),
+                      ),
+                      SizedBox(width: 6),
+                      Expanded(
+                        flex: 2,
+                        child: Text(
+                          'Current/mo',
+                          textAlign: TextAlign.right,
+                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const Divider(height: 1),
+
+                // Single-Row Columnar Items List
+                Expanded(
+                  child: ListView.separated(
+                    itemCount: items.length,
+                    padding: const EdgeInsets.symmetric(vertical: 4),
+                    separatorBuilder: (context, index) => const Divider(height: 1),
+                    itemBuilder: (context, index) {
+                      final item = items[index];
+                      final cat = item.category;
+
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        child: Row(
+                          children: [
+                            // Column 0: Category Icon + Item Name
+                            Expanded(
+                              flex: 3,
+                              child: Row(
+                                children: [
+                                  CircleAvatar(
+                                    radius: 14,
+                                    backgroundColor: cat.color.withValues(alpha: isDarkMode ? 0.25 : 0.15),
+                                    child: Icon(cat.icon, size: 14, color: cat.color),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: Text(
+                                      item.name,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 13,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(width: 6),
+
+                            // Column 1: Price
+                            Expanded(
+                              flex: 2,
+                              child: Text(
+                                '${item.price.toStringAsFixed(2)} €',
+                                textAlign: TextAlign.right,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 12,
+                                  color: theme.colorScheme.onSurface,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 6),
+
+                            // Column 2: Target Monthly Cost
+                            Expanded(
+                              flex: 2,
+                              child: Text(
+                                '${item.goalPricePerMonth.toStringAsFixed(2)} €',
+                                textAlign: TextAlign.right,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 12,
+                                  color: theme.colorScheme.primary,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 6),
+
+                            // Column 3: Current Monthly Cost
+                            Expanded(
+                              flex: 2,
+                              child: Text(
+                                item.usedDurationMonths > 0
+                                    ? '${item.usedPricePerMonth.toStringAsFixed(2)} €'
+                                    : 'N/A',
+                                textAlign: TextAlign.right,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 12,
+                                  color: item.isGoalReached
+                                      ? (isDarkMode ? Colors.green.shade300 : Colors.green.shade800)
+                                      : (isDarkMode ? Colors.grey.shade300 : Colors.grey.shade800),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
+    );
+  }
+}
+
+class WinstreaksDetailScreen extends StatelessWidget {
+  final List<Item> items;
+
+  const WinstreaksDetailScreen({
+    super.key,
+    required this.items,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDarkMode = theme.brightness == Brightness.dark;
+
+    final sortedItems = List<Item>.from(items)
+      ..sort((a, b) => b.usageStreak.compareTo(a.usageStreak));
+
+    return Scaffold(
+      appBar: AppBar(
+        title: const Row(
+          children: [
+            Icon(Icons.local_fire_department, color: Colors.deepOrange),
+            SizedBox(width: 8),
+            Text(
+              'Usage Winstreaks',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+          ],
+        ),
+      ),
+      body: sortedItems.isEmpty
+          ? Center(
+              child: Text(
+                'No items found.',
+                style: theme.textTheme.bodyLarge?.copyWith(
+                  color: theme.colorScheme.outline,
+                ),
+              ),
+            )
+          : Column(
+              children: [
+                // Column Headers Row
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+                  child: const Row(
+                    children: [
+                      Expanded(
+                        flex: 3,
+                        child: Text(
+                          'Item',
+                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+                        ),
+                      ),
+                      SizedBox(width: 6),
+                      Expanded(
+                        flex: 2,
+                        child: Text(
+                          'Used / Goal',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+                        ),
+                      ),
+                      SizedBox(width: 6),
+                      Expanded(
+                        flex: 2,
+                        child: Text(
+                          'Current Streak',
+                          textAlign: TextAlign.right,
+                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const Divider(height: 1),
+
+                // Items List
+                Expanded(
+                  child: ListView.separated(
+                    itemCount: sortedItems.length,
+                    padding: const EdgeInsets.symmetric(vertical: 4),
+                    separatorBuilder: (context, index) => const Divider(height: 1),
+                    itemBuilder: (context, index) {
+                      final item = sortedItems[index];
+                      final cat = item.category;
+                      final hasStreak = item.usageStreak > 0;
+
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        child: Row(
+                          children: [
+                            // Column 0: Category Icon + Item Name
+                            Expanded(
+                              flex: 3,
+                              child: Row(
+                                children: [
+                                  CircleAvatar(
+                                    radius: 14,
+                                    backgroundColor: cat.color.withValues(alpha: isDarkMode ? 0.25 : 0.15),
+                                    child: Icon(cat.icon, size: 14, color: cat.color),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: Text(
+                                      item.name,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 13,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(width: 6),
+
+                            // Column 1: Used Months / Goal Months
+                            Expanded(
+                              flex: 2,
+                              child: Text(
+                                '${item.usedDurationMonths} / ${item.goalDurationMonths} mo',
+                                textAlign: TextAlign.center,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 12,
+                                  color: item.isGoalReached
+                                      ? (isDarkMode ? Colors.green.shade300 : Colors.green.shade800)
+                                      : theme.colorScheme.onSurface,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 6),
+
+                            // Column 2: Winstreak Badge
+                            Expanded(
+                              flex: 2,
+                              child: Align(
+                                alignment: Alignment.centerRight,
+                                child: hasStreak
+                                    ? Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                        decoration: BoxDecoration(
+                                          color: isDarkMode
+                                              ? Colors.deepOrange.shade900.withValues(alpha: 0.4)
+                                              : Colors.orange.shade100,
+                                          borderRadius: BorderRadius.circular(16),
+                                          border: Border.all(
+                                            color: isDarkMode ? Colors.deepOrange.shade400 : Colors.orange.shade400,
+                                          ),
+                                        ),
+                                        child: Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Icon(
+                                              Icons.local_fire_department,
+                                              size: 13,
+                                              color: isDarkMode ? Colors.orange.shade300 : Colors.deepOrange,
+                                            ),
+                                            const SizedBox(width: 3),
+                                            Text(
+                                              '${item.usageStreak} mo',
+                                              style: TextStyle(
+                                                color: isDarkMode ? Colors.orange.shade200 : Colors.deepOrange.shade900,
+                                                fontWeight: FontWeight.bold,
+                                                fontSize: 11,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      )
+                                    : Text(
+                                        'No streak',
+                                        style: TextStyle(
+                                          color: theme.colorScheme.outline,
+                                          fontSize: 11,
+                                        ),
+                                      ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
+    );
+  }
+}
+
 class StatisticsView extends StatelessWidget {
   final List<Item> items;
 
@@ -10,6 +407,31 @@ class StatisticsView extends StatelessWidget {
     super.key,
     required this.items,
   });
+
+  void _navigateToDetailSubpage(
+    BuildContext context,
+    String title,
+    List<Item> subpageItems, {
+    Category? category,
+  }) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => ItemsDetailScreen(
+          title: title,
+          items: subpageItems,
+          category: category,
+        ),
+      ),
+    );
+  }
+
+  void _navigateToWinstreaksSubpage(BuildContext context, List<Item> allItems) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => WinstreaksDetailScreen(items: allItems),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -58,8 +480,15 @@ class StatisticsView extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Main Summary Card
-          SummaryCard(items: items),
+          // Main Summary Card (Clickable to open subpage with all items)
+          SummaryCard(
+            items: items,
+            onTap: () => _navigateToDetailSubpage(
+              context,
+              'Overview Summary',
+              items,
+            ),
+          ),
 
           const SizedBox(height: 8),
 
@@ -140,135 +569,145 @@ class StatisticsView extends StatelessWidget {
 
           const SizedBox(height: 12),
 
-          // Usage Winstreaks Grid Section (Disks & Flames)
+          // Usage Winstreaks Grid Section (Clickable to view winstreaks subpage)
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16.0),
             child: Card(
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(16),
               ),
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        const Icon(Icons.local_fire_department, color: Colors.deepOrange),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            'Winstreaks Grid',
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: theme.textTheme.titleMedium?.copyWith(
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: isDarkMode
-                                ? Colors.deepOrange.shade900.withValues(alpha: 0.4)
-                                : Colors.orange.shade100,
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Text(
-                            '$activeStreaksCount/${items.length} Active 🔥',
-                            style: TextStyle(
-                              color: isDarkMode ? Colors.orange.shade200 : Colors.deepOrange.shade900,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 12,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-
-                    // Grid filled with points (Minimalist Disks & Fires)
-                    Wrap(
-                      spacing: 10,
-                      runSpacing: 10,
-                      crossAxisAlignment: WrapCrossAlignment.center,
-                      children: items.map((item) {
-                        final hasStreak = item.usageStreak > 0;
-
-                        if (hasStreak) {
-                          // Fire Icon with Streak Number
-                          return Tooltip(
-                            message: '${item.name}: ${item.usageStreak} mo streak 🔥',
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                              decoration: BoxDecoration(
-                                color: isDarkMode
-                                    ? Colors.deepOrange.shade900.withValues(alpha: 0.5)
-                                    : Colors.orange.shade100,
-                                borderRadius: BorderRadius.circular(20),
-                                border: Border.all(
-                                  color: isDarkMode ? Colors.deepOrange.shade400 : Colors.orange.shade400,
-                                  width: 1.5,
-                                ),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.deepOrange.withValues(alpha: 0.25),
-                                    blurRadius: 6,
-                                    offset: const Offset(0, 2),
-                                  ),
-                                ],
+              child: InkWell(
+                borderRadius: BorderRadius.circular(16),
+                onTap: () => _navigateToWinstreaksSubpage(context, items),
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          const Icon(Icons.local_fire_department, color: Colors.deepOrange),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              'Winstreaks Grid',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: theme.textTheme.titleMedium?.copyWith(
+                                fontWeight: FontWeight.bold,
                               ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  const Icon(
-                                    Icons.local_fire_department,
-                                    size: 18,
-                                    color: Colors.deepOrange,
+                            ),
+                          ),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: isDarkMode
+                                  ? Colors.deepOrange.shade900.withValues(alpha: 0.4)
+                                  : Colors.orange.shade100,
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Text(
+                              '$activeStreaksCount/${items.length} Active 🔥',
+                              style: TextStyle(
+                                color: isDarkMode ? Colors.orange.shade200 : Colors.deepOrange.shade900,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                          Icon(
+                            Icons.chevron_right,
+                            color: theme.colorScheme.outline,
+                            size: 20,
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Grid filled with points (Minimalist Disks & Fires)
+                      Wrap(
+                        spacing: 10,
+                        runSpacing: 10,
+                        crossAxisAlignment: WrapCrossAlignment.center,
+                        children: items.map((item) {
+                          final hasStreak = item.usageStreak > 0;
+
+                          if (hasStreak) {
+                            // Fire Icon with Streak Number
+                            return Tooltip(
+                              message: '${item.name}: ${item.usageStreak} mo streak 🔥',
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                decoration: BoxDecoration(
+                                  color: isDarkMode
+                                      ? Colors.deepOrange.shade900.withValues(alpha: 0.5)
+                                      : Colors.orange.shade100,
+                                  borderRadius: BorderRadius.circular(20),
+                                  border: Border.all(
+                                    color: isDarkMode ? Colors.deepOrange.shade400 : Colors.orange.shade400,
+                                    width: 1.5,
                                   ),
-                                  const SizedBox(width: 4),
-                                  Text(
-                                    '${item.usageStreak}',
-                                    style: TextStyle(
-                                      color: isDarkMode ? Colors.orange.shade200 : Colors.deepOrange.shade900,
-                                      fontWeight: FontWeight.w900,
-                                      fontSize: 13,
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.deepOrange.withValues(alpha: 0.25),
+                                      blurRadius: 6,
+                                      offset: const Offset(0, 2),
+                                    ),
+                                  ],
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    const Icon(
+                                      Icons.local_fire_department,
+                                      size: 18,
+                                      color: Colors.deepOrange,
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      '${item.usageStreak}',
+                                      style: TextStyle(
+                                        color: isDarkMode ? Colors.orange.shade200 : Colors.deepOrange.shade900,
+                                        fontWeight: FontWeight.w900,
+                                        fontSize: 13,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            );
+                          } else {
+                            // Simple Minimalist Disk / Dot
+                            return Tooltip(
+                              message: '${item.name}: No active streak',
+                              child: Container(
+                                width: 32,
+                                height: 32,
+                                decoration: BoxDecoration(
+                                  color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.6),
+                                  shape: BoxShape.circle,
+                                  border: Border.all(
+                                    color: theme.colorScheme.outlineVariant,
+                                  ),
+                                ),
+                                child: Center(
+                                  child: Container(
+                                    width: 8,
+                                    height: 8,
+                                    decoration: BoxDecoration(
+                                      color: theme.colorScheme.outline,
+                                      shape: BoxShape.circle,
                                     ),
                                   ),
-                                ],
-                              ),
-                            ),
-                          );
-                        } else {
-                          // Simple Minimalist Disk / Dot
-                          return Tooltip(
-                            message: '${item.name}: No active streak',
-                            child: Container(
-                              width: 32,
-                              height: 32,
-                              decoration: BoxDecoration(
-                                color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.6),
-                                shape: BoxShape.circle,
-                                border: Border.all(
-                                  color: theme.colorScheme.outlineVariant,
                                 ),
                               ),
-                              child: Center(
-                                child: Container(
-                                  width: 8,
-                                  height: 8,
-                                  decoration: BoxDecoration(
-                                    color: theme.colorScheme.outline,
-                                    shape: BoxShape.circle,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          );
-                        }
-                      }).toList(),
-                    ),
-                  ],
+                            );
+                          }
+                        }).toList(),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -280,7 +719,7 @@ class StatisticsView extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20.0),
             child: Text(
-              'Cost Breakdown by Category',
+              'Cost Breakdown by Category (Tap to view items)',
               style: theme.textTheme.titleMedium?.copyWith(
                 fontWeight: FontWeight.bold,
               ),
@@ -288,7 +727,7 @@ class StatisticsView extends StatelessWidget {
           ),
           const SizedBox(height: 8),
 
-          // Category Cards
+          // Category Cards (Clickable to open subpage with category items)
           ...categoryMap.entries.map((entry) {
             final category = entry.key;
             final catItems = entry.value;
@@ -307,101 +746,116 @@ class StatisticsView extends StatelessWidget {
                   borderRadius: BorderRadius.circular(16),
                   side: BorderSide(color: theme.colorScheme.outlineVariant),
                 ),
-                child: Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          CircleAvatar(
-                            radius: 18,
-                            backgroundColor: category.color.withValues(alpha: isDarkMode ? 0.25 : 0.15),
-                            child: Icon(category.icon, size: 18, color: catColor),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Text(
-                              category.displayName,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: theme.textTheme.titleMedium?.copyWith(
-                                fontWeight: FontWeight.bold,
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(16),
+                  onTap: () => _navigateToDetailSubpage(
+                    context,
+                    category.displayName,
+                    catItems,
+                    category: category,
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            CircleAvatar(
+                              radius: 18,
+                              backgroundColor: category.color.withValues(alpha: isDarkMode ? 0.25 : 0.15),
+                              child: Icon(category.icon, size: 18, color: catColor),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Text(
+                                category.displayName,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: theme.textTheme.titleMedium?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
                             ),
-                          ),
-                          const SizedBox(width: 8),
-                          FittedBox(
-                            fit: BoxFit.scaleDown,
-                            child: Text(
-                              '${categoryTotal.toStringAsFixed(2)} €',
-                              style: theme.textTheme.titleMedium?.copyWith(
-                                fontWeight: FontWeight.bold,
-                                color: catColor,
+                            const SizedBox(width: 8),
+                            FittedBox(
+                              fit: BoxFit.scaleDown,
+                              child: Text(
+                                '${categoryTotal.toStringAsFixed(2)} €',
+                                style: theme.textTheme.titleMedium?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                  color: catColor,
+                                ),
                               ),
                             ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 12),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Flexible(
-                            child: Text(
-                              '${catItems.length} ${catItems.length == 1 ? 'item' : 'items'} (${(categoryPercentage * 100).toStringAsFixed(0)}% of total)',
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: theme.textTheme.bodySmall?.copyWith(
-                                color: isDarkMode ? Colors.grey.shade400 : Colors.grey.shade700,
-                              ),
+                            const SizedBox(width: 4),
+                            Icon(
+                              Icons.chevron_right,
+                              color: theme.colorScheme.outline,
+                              size: 20,
                             ),
-                          ),
-                          const SizedBox(width: 8),
-                          FittedBox(
-                            fit: BoxFit.scaleDown,
-                            child: Text(
-                              'Goal: ${categoryGoalRate.toStringAsFixed(2)} €/mo',
-                              style: theme.textTheme.bodySmall?.copyWith(
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 6),
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(4),
-                        child: LinearProgressIndicator(
-                          value: categoryPercentage.clamp(0.0, 1.0),
-                          minHeight: 6,
-                          backgroundColor: theme.colorScheme.surfaceContainerHighest,
-                          valueColor: AlwaysStoppedAnimation<Color>(catColor),
+                          ],
                         ),
-                      ),
-                      const SizedBox(height: 8),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            'Used Rate Equivalent:',
-                            style: theme.textTheme.bodySmall?.copyWith(
-                              color: isDarkMode ? Colors.grey.shade400 : Colors.grey.shade600,
-                            ),
-                          ),
-                          FittedBox(
-                            fit: BoxFit.scaleDown,
-                            child: Text(
-                              '${categoryUsedRate.toStringAsFixed(2)} € / mo',
-                              style: theme.textTheme.bodySmall?.copyWith(
-                                fontWeight: FontWeight.bold,
-                                color: theme.colorScheme.primary,
+                        const SizedBox(height: 12),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Flexible(
+                              child: Text(
+                                '${catItems.length} ${catItems.length == 1 ? 'item' : 'items'} (${(categoryPercentage * 100).toStringAsFixed(0)}% of total)',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  color: isDarkMode ? Colors.grey.shade400 : Colors.grey.shade700,
+                                ),
                               ),
                             ),
+                            const SizedBox(width: 8),
+                            FittedBox(
+                              fit: BoxFit.scaleDown,
+                              child: Text(
+                                'Goal: ${categoryGoalRate.toStringAsFixed(2)} €/mo',
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 6),
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(4),
+                          child: LinearProgressIndicator(
+                            value: categoryPercentage.clamp(0.0, 1.0),
+                            minHeight: 6,
+                            backgroundColor: theme.colorScheme.surfaceContainerHighest,
+                            valueColor: AlwaysStoppedAnimation<Color>(catColor),
                           ),
-                        ],
-                      ),
-                    ],
+                        ),
+                        const SizedBox(height: 8),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              'Used Rate Equivalent:',
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: isDarkMode ? Colors.grey.shade400 : Colors.grey.shade600,
+                              ),
+                            ),
+                            FittedBox(
+                              fit: BoxFit.scaleDown,
+                              child: Text(
+                                '${categoryUsedRate.toStringAsFixed(2)} € / mo',
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                  color: theme.colorScheme.primary,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),
