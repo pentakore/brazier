@@ -794,7 +794,7 @@ class CompactItemCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: [
-                const SizedBox(height: 6),
+                const SizedBox(height: 0), //no padding needed between title and progress bar
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -823,7 +823,7 @@ class CompactItemCard extends StatelessWidget {
                     ),
                   ],
                 ),
-                const SizedBox(height: 6),
+                const SizedBox(height: 6), //padding between text and bar
 
                 // Progress Bar
                 ClipRRect(
