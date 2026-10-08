@@ -1,15 +1,24 @@
 import 'package:flutter/material.dart';
 
 import '../models/item.dart';
+import 'category_manager_dialog.dart';
 
 class ItemDialog extends StatefulWidget {
   final Item? item;
+  final List<Category> categories;
   final ValueChanged<Item> onSave;
+  final ValueChanged<Category>? onAddCategory;
+  final ValueChanged<Category>? onUpdateCategory;
+  final ValueChanged<String>? onDeleteCategory;
 
   const ItemDialog({
     super.key,
     this.item,
+    required this.categories,
     required this.onSave,
+    this.onAddCategory,
+    this.onUpdateCategory,
+    this.onDeleteCategory,
   });
 
   @override
@@ -23,7 +32,7 @@ class _ItemDialogState extends State<ItemDialog> {
   late TextEditingController _priceController;
   late TextEditingController _goalDurationController;
   late TextEditingController _usedDurationController;
-  late ItemCategory _selectedCategory;
+  late Category _selectedCategory;
   late bool _isDefaultUsed;
 
   @override
@@ -40,7 +49,15 @@ class _ItemDialogState extends State<ItemDialog> {
     _usedDurationController = TextEditingController(
       text: item != null ? item.usedDurationMonths.toString() : '0',
     );
-    _selectedCategory = item?.category ?? ItemCategory.devices;
+
+    final Category initialCategory = (item != null && widget.categories.isNotEmpty)
+        ? widget.categories.firstWhere(
+            (c) => c.id == item.category.id || c.displayName == item.category.displayName,
+            orElse: () => widget.categories.first,
+          )
+        : (widget.categories.isNotEmpty ? widget.categories.first : Category.defaultCategories.first);
+
+    _selectedCategory = initialCategory;
     _isDefaultUsed = item?.isDefaultUsed ?? false;
 
     _priceController.addListener(_updateCalculations);
@@ -50,6 +67,53 @@ class _ItemDialogState extends State<ItemDialog> {
 
   void _updateCalculations() {
     setState(() {});
+  }
+
+  void _openCreateCategoryDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => CategoryEditDialog(
+        onSave: (newCat) {
+          if (widget.onAddCategory != null) {
+            widget.onAddCategory!(newCat);
+          }
+          setState(() {
+            _selectedCategory = newCat;
+          });
+        },
+      ),
+    );
+  }
+
+  void _openCategoryManagerDialog() {
+    if (widget.onAddCategory != null &&
+        widget.onUpdateCategory != null &&
+        widget.onDeleteCategory != null) {
+      showDialog(
+        context: context,
+        builder: (context) => CategoryManagerDialog(
+          categories: widget.categories,
+          onAddCategory: (cat) {
+            widget.onAddCategory!(cat);
+            setState(() {});
+          },
+          onUpdateCategory: (cat) {
+            widget.onUpdateCategory!(cat);
+            if (_selectedCategory.id == cat.id) {
+              _selectedCategory = cat;
+            }
+            setState(() {});
+          },
+          onDeleteCategory: (catId) {
+            widget.onDeleteCategory!(catId);
+            if (_selectedCategory.id == catId && widget.categories.isNotEmpty) {
+              _selectedCategory = widget.categories.first;
+            }
+            setState(() {});
+          },
+        ),
+      );
+    }
   }
 
   @override
@@ -177,46 +241,64 @@ class _ItemDialogState extends State<ItemDialog> {
                 ),
                 const SizedBox(height: 16),
 
-                // Category selector
-                Text(
-                  'Category',
-                  style: theme.textTheme.titleSmall?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
+                // Category selector Header
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Category',
+                      style: theme.textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    TextButton.icon(
+                      onPressed: _openCategoryManagerDialog,
+                      icon: const Icon(Icons.settings, size: 16),
+                      label: const Text('Manage Categories', style: TextStyle(fontSize: 12)),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 4),
                 Wrap(
                   spacing: 8,
                   runSpacing: 8,
-                  children: ItemCategory.values.map((cat) {
-                    final selected = _selectedCategory == cat;
-                    return FilterChip(
-                      selected: selected,
-                      showCheckmark: false,
-                      avatar: Icon(
-                        cat.icon,
-                        size: 18,
-                        color: selected
-                            ? theme.colorScheme.onPrimary
-                            : cat.color,
-                      ),
-                      label: Text(cat.displayName),
-                      selectedColor: theme.colorScheme.primary,
-                      labelStyle: TextStyle(
-                        color: selected
-                            ? theme.colorScheme.onPrimary
-                            : theme.colorScheme.onSurface,
-                        fontWeight: selected ? FontWeight.bold : FontWeight.normal,
-                      ),
-                      onSelected: (bool isSelected) {
-                        if (isSelected) {
-                          setState(() {
-                            _selectedCategory = cat;
-                          });
-                        }
-                      },
-                    );
-                  }).toList(),
+                  children: [
+                    ...widget.categories.map((cat) {
+                      final selected = _selectedCategory.id == cat.id;
+                      return FilterChip(
+                        selected: selected,
+                        showCheckmark: false,
+                        avatar: Icon(
+                          cat.icon,
+                          size: 18,
+                          color: selected
+                              ? theme.colorScheme.onPrimary
+                              : cat.color,
+                        ),
+                        label: Text(cat.displayName),
+                        selectedColor: theme.colorScheme.primary,
+                        labelStyle: TextStyle(
+                          color: selected
+                              ? theme.colorScheme.onPrimary
+                              : theme.colorScheme.onSurface,
+                          fontWeight: selected ? FontWeight.bold : FontWeight.normal,
+                        ),
+                        onSelected: (bool isSelected) {
+                          if (isSelected) {
+                            setState(() {
+                              _selectedCategory = cat;
+                            });
+                          }
+                        },
+                      );
+                    }),
+                    // Add Category Chip directly among the choices!
+                    ActionChip(
+                      avatar: const Icon(Icons.add, size: 18),
+                      label: const Text('Add Category'),
+                      onPressed: _openCreateCategoryDialog,
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 20),
 

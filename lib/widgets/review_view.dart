@@ -188,7 +188,7 @@ class _ReviewViewState extends State<ReviewView> {
                       scaleX: 0.90,
                       scaleY: 1.0,
                       child: Transform.translate(
-                        offset: const Offset(0, 28),
+                        offset: const Offset(0, 26),
                         child: _ReviewCardContent(
                           item: pending[(_currentIndex + 2) % pending.length],
                         ),
@@ -383,12 +383,15 @@ class _ReviewViewState extends State<ReviewView> {
               Flexible(
                 child: ElevatedButton.icon(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: isDarkMode ? Colors.green.shade700 : Colors.green.shade600,
-                    foregroundColor: Colors.white,
+                    backgroundColor: isDarkMode ? Colors.green.shade700.withValues(alpha: 0.4) : Colors.green.shade50,
+                    foregroundColor: isDarkMode ? Colors.white : Colors.green.shade700,
                     elevation: 2,
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(30),
+                      side: BorderSide(
+                        color: isDarkMode ? Colors.green.shade400 : Colors.green.shade600,
+                      ),
                     ),
                   ),
                   onPressed: () => _handleReview(currentItem, true),
@@ -429,7 +432,7 @@ class _ReviewCardContent extends StatelessWidget {
     final newCostPerMo = '${(item.price / nextUsedDuration).toStringAsFixed(2)} €/mo';
 
     return Card(
-      elevation: 6,
+      elevation: 3,
       margin: EdgeInsets.zero,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(24),

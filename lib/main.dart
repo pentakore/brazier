@@ -2,8 +2,9 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 
 import 'models/item.dart';
-import 'widgets/item_card.dart';
+import 'widgets/category_manager_dialog.dart';
 import 'widgets/item_dialog.dart';
+import 'widgets/items_view.dart';
 import 'widgets/review_view.dart';
 import 'widgets/statistics_view.dart';
 
@@ -31,30 +32,42 @@ class _BrazierAppState extends State<BrazierApp> {
   Widget build(BuildContext context) {
     final seedColor = const Color(0xFF5C6BC0);
 
+    final lightColorScheme = ColorScheme.fromSeed(
+      seedColor: seedColor,
+      brightness: Brightness.light,
+    );
+
+    final darkColorScheme = ColorScheme.fromSeed(
+      seedColor: seedColor,
+      brightness: Brightness.dark,
+    );
+
     return MaterialApp(
       title: 'Brazier - Item Cost Tracker',
       debugShowCheckedModeBanner: false,
       themeMode: _themeMode,
       theme: ThemeData(
         useMaterial3: true,
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: seedColor,
-          brightness: Brightness.light,
-        ),
-        appBarTheme: const AppBarTheme(
+        colorScheme: lightColorScheme,
+        scaffoldBackgroundColor: lightColorScheme.surface,
+        appBarTheme: AppBarTheme(
           centerTitle: false,
           elevation: 0,
+          scrolledUnderElevation: 0.0,
+          surfaceTintColor: Colors.transparent,
+          backgroundColor: lightColorScheme.surface,
         ),
       ),
       darkTheme: ThemeData(
         useMaterial3: true,
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: seedColor,
-          brightness: Brightness.dark,
-        ),
-        appBarTheme: const AppBarTheme(
+        colorScheme: darkColorScheme,
+        scaffoldBackgroundColor: darkColorScheme.surface,
+        appBarTheme: AppBarTheme(
           centerTitle: false,
           elevation: 0,
+          scrolledUnderElevation: 0.0,
+          surfaceTintColor: Colors.transparent,
+          backgroundColor: darkColorScheme.surface,
         ),
       ),
       home: HomeScreen(
@@ -82,45 +95,65 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   int _currentTabIndex = 0;
 
+  // Dynamic Categories list initialized with defaults
+  late List<Category> _categories;
+
   // Initial sample items
-  final List<Item> _items = [
-    Item(
-      id: '1',
-      name: 'Smartphone',
-      price: 800.0,
-      category: ItemCategory.devices,
-      goalDurationMonths: 24,
-      usedDurationMonths: 26,
-      isDefaultUsed: true,
-    ),
-    Item(
-      id: '2',
-      name: 'Winter Jacket',
-      price: 120.0,
-      category: ItemCategory.clothes,
-      goalDurationMonths: 6,
-      usedDurationMonths: 4,
-    ),
-    Item(
-      id: '3',
-      name: 'Noise Cancelling Headphones',
-      price: 240.0,
-      category: ItemCategory.devices,
-      goalDurationMonths: 12,
-      usedDurationMonths: 12,
-    ),
-    Item(
-      id: '4',
-      name: 'Running Shoes',
-      price: 100.0,
-      category: ItemCategory.fitness,
-      goalDurationMonths: 5,
-      usedDurationMonths: 2,
-    ),
-  ];
+  late List<Item> _items;
+
+  @override
+  void initState() {
+    super.initState();
+    _categories = Category.defaultCategories;
+
+    final clothesCat = _categories.firstWhere((c) => c.id == 'clothes');
+    final devicesCat = _categories.firstWhere((c) => c.id == 'devices');
+    final fitnessCat = _categories.firstWhere((c) => c.id == 'fitness');
+
+    _items = [
+      Item(
+        id: '1',
+        name: 'Smartphone',
+        price: 800.0,
+        category: devicesCat,
+        goalDurationMonths: 24,
+        usedDurationMonths: 26,
+        isDefaultUsed: true,
+        usageStreak: 0,
+      ),
+      Item(
+        id: '2',
+        name: 'Winter Jacket',
+        price: 120.0,
+        category: clothesCat,
+        goalDurationMonths: 6,
+        usedDurationMonths: 4,
+        usageStreak: 0,
+      ),
+      Item(
+        id: '3',
+        name: 'Noise Cancelling Headphones',
+        price: 240.0,
+        category: devicesCat,
+        goalDurationMonths: 12,
+        usedDurationMonths: 12,
+        usageStreak: 0,
+
+      ),
+      Item(
+        id: '4',
+        name: 'Running Shoes',
+        price: 100.0,
+        category: fitnessCat,
+        goalDurationMonths: 5,
+        usedDurationMonths: 2,
+        usageStreak: 0,
+      ),
+    ];
+  }
 
   String _searchQuery = '';
-  ItemCategory? _selectedCategoryFilter;
+  Category? _selectedCategoryFilter;
   bool _showOnlyGoalReached = false;
 
   List<Item> get _filteredItems {
@@ -128,7 +161,7 @@ class _HomeScreenState extends State<HomeScreen> {
       final matchesQuery = _searchQuery.isEmpty ||
           item.name.toLowerCase().contains(_searchQuery.toLowerCase());
       final matchesCategory = _selectedCategoryFilter == null ||
-          item.category == _selectedCategoryFilter;
+          item.category.id == _selectedCategoryFilter!.id;
       final matchesGoalFilter = !_showOnlyGoalReached || item.isGoalReached;
 
       return matchesQuery && matchesCategory && matchesGoalFilter;
@@ -137,6 +170,67 @@ class _HomeScreenState extends State<HomeScreen> {
 
   int get _pendingReviewCount {
     return _items.where((i) => i.currentMonthlyStatus == MonthlyReviewStatus.pending).length;
+  }
+
+  void _addCategory(Category cat) {
+    setState(() {
+      _categories.add(cat);
+    });
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Added category "${cat.displayName}"')),
+    );
+  }
+
+  void _updateCategory(Category updatedCat) {
+    setState(() {
+      final index = _categories.indexWhere((c) => c.id == updatedCat.id);
+      if (index != -1) {
+        _categories[index] = updatedCat;
+      }
+      // Update item references so all existing items immediately reflect new name/icon/color
+      for (final item in _items) {
+        if (item.category.id == updatedCat.id) {
+          item.category = updatedCat;
+        }
+      }
+    });
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Updated category "${updatedCat.displayName}"')),
+    );
+  }
+
+  void _deleteCategory(String categoryId) {
+    if (_categories.length <= 1) return;
+    final catToDelete = _categories.firstWhere((c) => c.id == categoryId);
+
+    setState(() {
+      _categories.removeWhere((c) => c.id == categoryId);
+      final fallbackCat = _categories.first;
+      for (final item in _items) {
+        if (item.category.id == categoryId) {
+          item.category = fallbackCat;
+        }
+      }
+      if (_selectedCategoryFilter?.id == categoryId) {
+        _selectedCategoryFilter = null;
+      }
+    });
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Deleted category "${catToDelete.displayName}"')),
+    );
+  }
+
+  void _openCategoryManager() {
+    showDialog(
+      context: context,
+      builder: (context) => CategoryManagerDialog(
+        categories: _categories,
+        onAddCategory: _addCategory,
+        onUpdateCategory: _updateCategory,
+        onDeleteCategory: _deleteCategory,
+      ),
+    );
   }
 
   void _addItem(Item newItem) {
@@ -202,13 +296,15 @@ class _HomeScreenState extends State<HomeScreen> {
 
         if (oldStatus == newStatus && !current.isDefaultUsed) return;
 
-        // Adjust usedDurationMonths depending on transition
+        // Adjust usedDurationMonths and usageStreak depending on transition
         if (oldStatus == MonthlyReviewStatus.used && newStatus != MonthlyReviewStatus.used) {
-          // Was used, now no longer used -> decrement
+          // Was used, now no longer used -> decrement duration and decrement streak
           current.usedDurationMonths = max(0, current.usedDurationMonths - 1);
+          current.usageStreak = max(0, current.usageStreak - 1);
         } else if (oldStatus != MonthlyReviewStatus.used && newStatus == MonthlyReviewStatus.used) {
-          // Was not used/pending, now used -> increment
+          // Was not used/pending, now used -> increment duration and increment streak
           current.usedDurationMonths += 1;
+          current.usageStreak += 1;
         }
 
         // Update review status flags
@@ -220,6 +316,7 @@ class _HomeScreenState extends State<HomeScreen> {
           case MonthlyReviewStatus.notUsed:
             current.lastReviewedMonthKey = Item.currentMonthKey;
             current.currentMonthUsed = false;
+            current.usageStreak = 0; // Reset streak on explicitly marked not used
             current.isDefaultUsed = false; // Disable auto-default on explicit override
             break;
           case MonthlyReviewStatus.pending:
@@ -234,10 +331,10 @@ class _HomeScreenState extends State<HomeScreen> {
     String msg;
     switch (newStatus) {
       case MonthlyReviewStatus.used:
-        msg = 'Marked "${item.name}" as Currently Used (+1 mo)';
+        msg = 'Marked "${item.name}" as Currently Used (+1 mo, 🔥 streak updated!)';
         break;
       case MonthlyReviewStatus.notUsed:
-        msg = 'Marked "${item.name}" as Not Used';
+        msg = 'Marked "${item.name}" as Not Used (streak reset)';
         break;
       case MonthlyReviewStatus.pending:
         msg = 'Reset "${item.name}" to Needs Review (reappeared in Review tab)';
@@ -268,7 +365,11 @@ class _HomeScreenState extends State<HomeScreen> {
     showDialog(
       context: context,
       builder: (context) => ItemDialog(
+        categories: _categories,
         onSave: _addItem,
+        onAddCategory: _addCategory,
+        onUpdateCategory: _updateCategory,
+        onDeleteCategory: _deleteCategory,
       ),
     );
   }
@@ -278,7 +379,11 @@ class _HomeScreenState extends State<HomeScreen> {
       context: context,
       builder: (context) => ItemDialog(
         item: item,
+        categories: _categories,
         onSave: _editItem,
+        onAddCategory: _addCategory,
+        onUpdateCategory: _updateCategory,
+        onDeleteCategory: _deleteCategory,
       ),
     );
   }
@@ -315,6 +420,10 @@ class _HomeScreenState extends State<HomeScreen> {
 
     return Scaffold(
       appBar: AppBar(
+        backgroundColor: theme.colorScheme.surface,
+        scrolledUnderElevation: 0.0,
+        surfaceTintColor: Colors.transparent,
+        notificationPredicate: (ScrollNotification notification) => false,
         title: Row(
           children: [
             Image.asset(
@@ -339,6 +448,12 @@ class _HomeScreenState extends State<HomeScreen> {
           ],
         ),
         actions: [
+          if (_currentTabIndex == 0)
+            IconButton(
+              icon: const Icon(Icons.category_outlined),
+              tooltip: 'Manage Categories',
+              onPressed: _openCategoryManager,
+            ),
           // Theme Switcher Menu
           PopupMenuButton<ThemeMode>(
             icon: Icon(_themeIcon),
@@ -426,135 +541,30 @@ class _HomeScreenState extends State<HomeScreen> {
           index: _currentTabIndex,
           children: [
             // TAB 0: Items List View
-            Column(
-              children: [
-                const SizedBox(height: 12),
-                // Search & Category Filter Section
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                  child: Column(
-                    children: [
-                      // Search Bar
-                      TextField(
-                        decoration: InputDecoration(
-                          hintText: 'Search items...',
-                          prefixIcon: const Icon(Icons.search),
-                          suffixIcon: _searchQuery.isNotEmpty
-                              ? IconButton(
-                                  icon: const Icon(Icons.clear),
-                                  onPressed: () => setState(() => _searchQuery = ''),
-                                )
-                              : null,
-                          filled: true,
-                          fillColor: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
-                          contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 16),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide.none,
-                          ),
-                        ),
-                        onChanged: (value) {
-                          setState(() {
-                            _searchQuery = value;
-                          });
-                        },
-                      ),
-                      const SizedBox(height: 10),
-
-                      // Category Filter Chips
-                      SingleChildScrollView(
-                        scrollDirection: Axis.horizontal,
-                        child: Row(
-                          children: [
-                            FilterChip(
-                              label: const Text('All Categories'),
-                              selected: _selectedCategoryFilter == null && !_showOnlyGoalReached,
-                              onSelected: (selected) {
-                                if (selected) {
-                                  setState(() {
-                                    _selectedCategoryFilter = null;
-                                    _showOnlyGoalReached = false;
-                                  });
-                                }
-                              },
-                            ),
-                            const SizedBox(width: 8),
-                            FilterChip(
-                              avatar: const Icon(Icons.check_circle_outline, size: 16),
-                              label: const Text('Goal Reached'),
-                              selected: _showOnlyGoalReached,
-                              onSelected: (selected) {
-                                setState(() {
-                                  _showOnlyGoalReached = selected;
-                                });
-                              },
-                            ),
-                            const SizedBox(width: 8),
-                            ...ItemCategory.values.map((cat) {
-                              final selected = _selectedCategoryFilter == cat;
-                              return Padding(
-                                padding: const EdgeInsets.only(right: 8.0),
-                                child: FilterChip(
-                                  avatar: Icon(cat.icon, size: 16, color: selected ? null : cat.color),
-                                  label: Text(cat.displayName),
-                                  selected: selected,
-                                  onSelected: (isSelected) {
-                                    setState(() {
-                                      _selectedCategoryFilter = isSelected ? cat : null;
-                                    });
-                                  },
-                                ),
-                              );
-                            }),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 12),
-
-                // Items List
-                Expanded(
-                  child: filtered.isEmpty
-                      ? Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(
-                                Icons.inventory_2_outlined,
-                                size: 64,
-                                color: theme.colorScheme.outline,
-                              ),
-                              const SizedBox(height: 16),
-                              Text(
-                                _items.isEmpty
-                                    ? 'No items tracked yet.\nTap "+" to add your first item!'
-                                    : 'No items match your filters.',
-                                textAlign: TextAlign.center,
-                                style: theme.textTheme.bodyLarge?.copyWith(
-                                  color: theme.colorScheme.outline,
-                                ),
-                              ),
-                            ],
-                          ),
-                        )
-                      : ListView.builder(
-                          itemCount: filtered.length,
-                          padding: const EdgeInsets.only(bottom: 80),
-                          itemBuilder: (context, index) {
-                            final item = filtered[index];
-                            return ItemCard(
-                              item: item,
-                              onEdit: () => _openEditDialog(item),
-                              onDelete: () => _deleteItem(item.id),
-                              onUpdateMonthlyStatus: (newStatus) =>
-                                  _updateMonthlyStatus(item, newStatus),
-                            );
-                          },
-                        ),
-                ),
-              ],
+            ItemsView(
+              items: filtered,
+              categories: _categories,
+              searchQuery: _searchQuery,
+              selectedCategoryFilter: _selectedCategoryFilter,
+              showOnlyGoalReached: _showOnlyGoalReached,
+              onSearchQueryChanged: (query) {
+                setState(() {
+                  _searchQuery = query;
+                });
+              },
+              onCategoryFilterChanged: (category) {
+                setState(() {
+                  _selectedCategoryFilter = category;
+                });
+              },
+              onGoalFilterChanged: (goalOnly) {
+                setState(() {
+                  _showOnlyGoalReached = goalOnly;
+                });
+              },
+              onEditItem: _openEditDialog,
+              onDeleteItem: _deleteItem,
+              onUpdateMonthlyStatus: _updateMonthlyStatus,
             ),
 
             // TAB 1: Monthly Review View
