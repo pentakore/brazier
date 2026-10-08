@@ -119,6 +119,7 @@ class _HomeScreenState extends State<HomeScreen> {
         goalDurationMonths: 24,
         usedDurationMonths: 26,
         isDefaultUsed: true,
+        usageStreak: 0,
       ),
       Item(
         id: '2',
@@ -127,6 +128,7 @@ class _HomeScreenState extends State<HomeScreen> {
         category: clothesCat,
         goalDurationMonths: 6,
         usedDurationMonths: 4,
+        usageStreak: 0,
       ),
       Item(
         id: '3',
@@ -135,6 +137,8 @@ class _HomeScreenState extends State<HomeScreen> {
         category: devicesCat,
         goalDurationMonths: 12,
         usedDurationMonths: 12,
+        usageStreak: 0,
+
       ),
       Item(
         id: '4',
@@ -143,6 +147,7 @@ class _HomeScreenState extends State<HomeScreen> {
         category: fitnessCat,
         goalDurationMonths: 5,
         usedDurationMonths: 2,
+        usageStreak: 0,
       ),
     ];
   }
@@ -291,13 +296,15 @@ class _HomeScreenState extends State<HomeScreen> {
 
         if (oldStatus == newStatus && !current.isDefaultUsed) return;
 
-        // Adjust usedDurationMonths depending on transition
+        // Adjust usedDurationMonths and usageStreak depending on transition
         if (oldStatus == MonthlyReviewStatus.used && newStatus != MonthlyReviewStatus.used) {
-          // Was used, now no longer used -> decrement
+          // Was used, now no longer used -> decrement duration and decrement streak
           current.usedDurationMonths = max(0, current.usedDurationMonths - 1);
+          current.usageStreak = max(0, current.usageStreak - 1);
         } else if (oldStatus != MonthlyReviewStatus.used && newStatus == MonthlyReviewStatus.used) {
-          // Was not used/pending, now used -> increment
+          // Was not used/pending, now used -> increment duration and increment streak
           current.usedDurationMonths += 1;
+          current.usageStreak += 1;
         }
 
         // Update review status flags
@@ -309,6 +316,7 @@ class _HomeScreenState extends State<HomeScreen> {
           case MonthlyReviewStatus.notUsed:
             current.lastReviewedMonthKey = Item.currentMonthKey;
             current.currentMonthUsed = false;
+            current.usageStreak = 0; // Reset streak on explicitly marked not used
             current.isDefaultUsed = false; // Disable auto-default on explicit override
             break;
           case MonthlyReviewStatus.pending:
@@ -323,10 +331,10 @@ class _HomeScreenState extends State<HomeScreen> {
     String msg;
     switch (newStatus) {
       case MonthlyReviewStatus.used:
-        msg = 'Marked "${item.name}" as Currently Used (+1 mo)';
+        msg = 'Marked "${item.name}" as Currently Used (+1 mo, 🔥 streak updated!)';
         break;
       case MonthlyReviewStatus.notUsed:
-        msg = 'Marked "${item.name}" as Not Used';
+        msg = 'Marked "${item.name}" as Not Used (streak reset)';
         break;
       case MonthlyReviewStatus.pending:
         msg = 'Reset "${item.name}" to Needs Review (reappeared in Review tab)';

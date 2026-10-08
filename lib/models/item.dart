@@ -61,6 +61,7 @@ class Item {
   String? lastReviewedMonthKey;
   bool? currentMonthUsed;
   bool isDefaultUsed;
+  int usageStreak;
 
   Item({
     required this.id,
@@ -72,6 +73,7 @@ class Item {
     this.lastReviewedMonthKey,
     this.currentMonthUsed,
     this.isDefaultUsed = false,
+    this.usageStreak = 0,
   });
 
   /// Calculates current year-month key string, e.g. "2025-05".
@@ -84,8 +86,11 @@ class Item {
   void checkAutoSyncDefaultUsed() {
     if (isDefaultUsed && lastReviewedMonthKey != currentMonthKey) {
       if (lastReviewedMonthKey != null) {
-        // A new month has arrived for a default-used item -> increment usage
+        // A new month has arrived for a default-used item -> increment usage & streak
         usedDurationMonths += 1;
+        usageStreak += 1;
+      } else if (usageStreak == 0) {
+        usageStreak = usedDurationMonths > 0 ? usedDurationMonths : 1;
       }
       lastReviewedMonthKey = currentMonthKey;
       currentMonthUsed = true;
@@ -140,6 +145,7 @@ class Item {
     String? lastReviewedMonthKey,
     bool? currentMonthUsed,
     bool? isDefaultUsed,
+    int? usageStreak,
   }) {
     return Item(
       id: id ?? this.id,
@@ -151,6 +157,7 @@ class Item {
       lastReviewedMonthKey: lastReviewedMonthKey ?? this.lastReviewedMonthKey,
       currentMonthUsed: currentMonthUsed ?? this.currentMonthUsed,
       isDefaultUsed: isDefaultUsed ?? this.isDefaultUsed,
+      usageStreak: usageStreak ?? this.usageStreak,
     );
   }
 }
