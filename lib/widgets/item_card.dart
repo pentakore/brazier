@@ -62,7 +62,7 @@ class ItemCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: [
-                // Top Header: Badges (Category, Status Dropdown, Goal Reached) wrapped safely + Actions Menu
+                // Top Header: Badges (Category, Status Dropdown, Fire Streak, Goal Reached) wrapped safely + Actions Menu
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -226,6 +226,43 @@ class ItemCard extends StatelessWidget {
                               ),
                             ),
                           ),
+
+                          // Fire Streak Badge (Winstreak)
+                          if (item.usageStreak > 0)
+                            Tooltip(
+                              message: '${item.usageStreak} consecutive months used!',
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: isDarkMode
+                                      ? Colors.deepOrange.shade900.withValues(alpha: 0.4)
+                                      : Colors.orange.shade100,
+                                  borderRadius: BorderRadius.circular(20),
+                                  border: Border.all(
+                                    color: isDarkMode ? Colors.deepOrange.shade400 : Colors.orange.shade400,
+                                  ),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      Icons.local_fire_department,
+                                      size: 14,
+                                      color: isDarkMode ? Colors.orange.shade300 : Colors.deepOrange,
+                                    ),
+                                    const SizedBox(width: 3),
+                                    Text(
+                                      '${item.usageStreak}',
+                                      style: TextStyle(
+                                        color: isDarkMode ? Colors.orange.shade200 : Colors.deepOrange.shade900,
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 11,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
 
                           // Goal Reached Badge
                           if (isGoalReached)
@@ -538,12 +575,12 @@ class CompactItemCard extends StatelessWidget {
         ),
       ),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 4),
+        padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 10.0),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Row 1: Category Icon Badge (ICON ONLY!), Status Dropdown (ICON ONLY!), Name, Price, Actions Menu
+            // Row 1: Category Icon Badge (ICON ONLY!), Status Dropdown, Fire Streak, Name, Price, Actions Menu
             Row(
               children: [
                 // Category Badge (ICON ONLY)
@@ -601,7 +638,6 @@ class CompactItemCard extends StatelessWidget {
                       ),
                     ),
                   ],
-                  //CURRENT STATE
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
                     decoration: BoxDecoration(
@@ -644,7 +680,46 @@ class CompactItemCard extends StatelessWidget {
                     ),
                   ),
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(width: 6),
+
+                // Fire Streak Badge
+                if (item.usageStreak > 0) ...[
+                  Tooltip(
+                    message: '${item.usageStreak} consecutive months used!',
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: isDarkMode
+                            ? Colors.deepOrange.shade900.withValues(alpha: 0.4)
+                            : Colors.orange.shade100,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: isDarkMode ? Colors.deepOrange.shade400 : Colors.orange.shade400,
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.local_fire_department,
+                            size: 13,
+                            color: isDarkMode ? Colors.orange.shade300 : Colors.deepOrange,
+                          ),
+                          const SizedBox(width: 2),
+                          Text(
+                            '${item.usageStreak}',
+                            style: TextStyle(
+                              color: isDarkMode ? Colors.orange.shade200 : Colors.deepOrange.shade900,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 11,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                ],
 
                 // Item Name
                 Expanded(
@@ -719,7 +794,7 @@ class CompactItemCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: [
-                const SizedBox(height: 0), //added padding
+                const SizedBox(height: 6),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -748,7 +823,7 @@ class CompactItemCard extends StatelessWidget {
                     ),
                   ],
                 ),
-                const SizedBox(height: 6), //padding between text and progress bar
+                const SizedBox(height: 6),
 
                 // Progress Bar
                 ClipRRect(
@@ -766,7 +841,6 @@ class CompactItemCard extends StatelessWidget {
                     ),
                   ),
                 ),
-                const SizedBox(height: 6), //padding between progress bar and bottom
               ],
             ),
           ],

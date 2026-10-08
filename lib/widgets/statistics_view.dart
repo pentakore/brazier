@@ -45,6 +45,7 @@ class StatisticsView extends StatelessWidget {
     final totalSpent = items.fold(0.0, (sum, item) => sum + item.price);
     final reachedGoals = items.where((i) => i.isGoalReached).toList();
     final inProgress = items.where((i) => !i.isGoalReached).toList();
+    final activeStreaksCount = items.where((i) => i.usageStreak > 0).length;
 
     // Group items by category
     final Map<Category, List<Item>> categoryMap = {};
@@ -130,6 +131,142 @@ class StatisticsView extends StatelessWidget {
                           isDarkMode ? Colors.green.shade400 : Colors.green,
                         ),
                       ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+
+          const SizedBox(height: 12),
+
+          // Usage Winstreaks Grid Section (Disks & Flames)
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16.0),
+            child: Card(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        const Icon(Icons.local_fire_department, color: Colors.deepOrange),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'Winstreaks Grid',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: theme.textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: isDarkMode
+                                ? Colors.deepOrange.shade900.withValues(alpha: 0.4)
+                                : Colors.orange.shade100,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Text(
+                            '$activeStreaksCount/${items.length} Active 🔥',
+                            style: TextStyle(
+                              color: isDarkMode ? Colors.orange.shade200 : Colors.deepOrange.shade900,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Grid filled with points (Minimalist Disks & Fires)
+                    Wrap(
+                      spacing: 10,
+                      runSpacing: 10,
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      children: items.map((item) {
+                        final hasStreak = item.usageStreak > 0;
+
+                        if (hasStreak) {
+                          // Fire Icon with Streak Number
+                          return Tooltip(
+                            message: '${item.name}: ${item.usageStreak} mo streak 🔥',
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                              decoration: BoxDecoration(
+                                color: isDarkMode
+                                    ? Colors.deepOrange.shade900.withValues(alpha: 0.5)
+                                    : Colors.orange.shade100,
+                                borderRadius: BorderRadius.circular(20),
+                                border: Border.all(
+                                  color: isDarkMode ? Colors.deepOrange.shade400 : Colors.orange.shade400,
+                                  width: 1.5,
+                                ),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.deepOrange.withValues(alpha: 0.25),
+                                    blurRadius: 6,
+                                    offset: const Offset(0, 2),
+                                  ),
+                                ],
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(
+                                    Icons.local_fire_department,
+                                    size: 18,
+                                    color: Colors.deepOrange,
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    '${item.usageStreak}',
+                                    style: TextStyle(
+                                      color: isDarkMode ? Colors.orange.shade200 : Colors.deepOrange.shade900,
+                                      fontWeight: FontWeight.w900,
+                                      fontSize: 13,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        } else {
+                          // Simple Minimalist Disk / Dot
+                          return Tooltip(
+                            message: '${item.name}: No active streak',
+                            child: Container(
+                              width: 32,
+                              height: 32,
+                              decoration: BoxDecoration(
+                                color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.6),
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: theme.colorScheme.outlineVariant,
+                                ),
+                              ),
+                              child: Center(
+                                child: Container(
+                                  width: 8,
+                                  height: 8,
+                                  decoration: BoxDecoration(
+                                    color: theme.colorScheme.outline,
+                                    shape: BoxShape.circle,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          );
+                        }
+                      }).toList(),
                     ),
                   ],
                 ),
