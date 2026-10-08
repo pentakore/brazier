@@ -205,7 +205,7 @@ class _ItemsViewState extends State<ItemsView> {
                         padding: const EdgeInsets.only(left: 12, right: 12, bottom: 80, top: 4),
                         gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                           crossAxisCount: crossAxisCount,
-                          mainAxisExtent: _isCompactView ? 96 : 240,
+                          mainAxisExtent: _isCompactView ? 90 : 240,
                           crossAxisSpacing: 8,
                           mainAxisSpacing: 8,
                         ),
