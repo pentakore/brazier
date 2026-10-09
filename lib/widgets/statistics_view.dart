@@ -72,13 +72,10 @@ class ItemsDetailScreen extends StatelessWidget {
                 // Total Price ratio (scaled to maxPrice)
                 final priceRatio = maxPrice > 0 ? (item.price / maxPrice).clamp(0.05, 1.0) : 0.0;
 
-                // Monthly Progress ratios (scaled relative to maxMonthlyCost so items are scaled between each other)
+                // Monthly Progress ratios (scaled relative to maxMonthlyCost)
                 final usedPrice = item.usedDurationMonths > 0 ? item.usedPricePerMonth : item.goalPricePerMonth;
                 final goalRatio = maxMonthlyCost > 0 ? (item.goalPricePerMonth / maxMonthlyCost).clamp(0.02, 1.0) : 0.0;
                 final usedRatio = maxMonthlyCost > 0 ? (usedPrice / maxMonthlyCost).clamp(0.02, 1.0) : 0.0;
-
-                final outerRatio = max(usedRatio, goalRatio);
-                final innerRatio = min(usedRatio, goalRatio);
 
                 return Container(
                   padding: const EdgeInsets.all(14),
@@ -171,7 +168,7 @@ class ItemsDetailScreen extends StatelessWidget {
                       ),
                       const SizedBox(height: 10),
 
-                      // Bar 2: Layered Monthly Cost Progress Bar (scaled to maxMonthlyCost with gray track visible)
+                      // Bar 2: Monthly Cost Bar with 8px Amber Goal Target Notch ALWAYS ON TOP
                       Row(
                         children: [
                           SizedBox(
@@ -185,50 +182,64 @@ class ItemsDetailScreen extends StatelessWidget {
                             ),
                           ),
                           Expanded(
-                            child: Tooltip(
-                              message: 'Target Goal: ${item.goalPricePerMonth.toStringAsFixed(2)} €/mo (${item.goalDurationMonths} mo)\nActual Used: ${item.usedDurationMonths > 0 ? '${item.usedPricePerMonth.toStringAsFixed(2)} €/mo' : 'N/A'} (${item.usedDurationMonths} mo)',
-                              child: Stack(
-                                children: [
-                                  // Gray Background Track (100% width)
-                                  Container(
-                                    height: 8,
-                                    decoration: BoxDecoration(
-                                      color: theme.colorScheme.surfaceContainerHighest,
+                            child: LayoutBuilder(
+                              builder: (context, constraints) {
+                                final totalWidth = constraints.maxWidth;
+                                final goalLeft = (totalWidth * goalRatio).clamp(0.0, totalWidth);
+                                final markerLeft = (goalLeft - 4).clamp(0.0, totalWidth - 8);
+
+                                return Stack(
+                                  clipBehavior: Clip.none,
+                                  children: [
+                                    // 1. Gray Background Track (100% width)
+                                    Container(
+                                      height: 8,
+                                      decoration: BoxDecoration(
+                                        color: theme.colorScheme.surfaceContainerHighest,
+                                        borderRadius: BorderRadius.circular(4),
+                                      ),
+                                    ),
+
+                                    // 2. Current Used Monthly Cost Fill Bar
+                                    ClipRRect(
                                       borderRadius: BorderRadius.circular(4),
-                                    ),
-                                  ),
-
-                                  // Layer 1: Outer / Longer Bar (Goal or Used)
-                                  ClipRRect(
-                                    borderRadius: BorderRadius.circular(4),
-                                    child: LinearProgressIndicator(
-                                      value: outerRatio,
-                                      minHeight: 8,
-                                      backgroundColor: Colors.transparent,
-                                      valueColor: AlwaysStoppedAnimation<Color>(
-                                        item.isGoalReached
-                                            ? (isDarkMode ? Colors.green.shade400 : Colors.green.shade600)
-                                            : (isDarkMode ? Colors.indigo.shade900.withValues(alpha: 0.6) : Colors.indigo.shade100),
+                                      child: LinearProgressIndicator(
+                                        value: usedRatio,
+                                        minHeight: 8,
+                                        backgroundColor: Colors.transparent,
+                                        valueColor: AlwaysStoppedAnimation<Color>(
+                                          item.isGoalReached
+                                              ? (isDarkMode ? Colors.green.shade400 : Colors.green.shade600)
+                                              : theme.colorScheme.tertiary,
+                                        ),
                                       ),
                                     ),
-                                  ),
 
-                                  // Layer 2: Inner / Shorter Bar rendered ON TOP
-                                  ClipRRect(
-                                    borderRadius: BorderRadius.circular(4),
-                                    child: LinearProgressIndicator(
-                                      value: innerRatio,
-                                      minHeight: 8,
-                                      backgroundColor: Colors.transparent,
-                                      valueColor: AlwaysStoppedAnimation<Color>(
-                                        item.isGoalReached
-                                            ? (isDarkMode ? Colors.green.shade900 : Colors.green.shade200)
-                                            : theme.colorScheme.primary,
+                                    // 3. Target Goal Indicator Segment (8px Notch ALWAYS ON TOP)
+                                    Positioned(
+                                      left: markerLeft,
+                                      child: Tooltip(
+                                        message: 'Target Goal (${item.goalDurationMonths} mo): ${item.goalPricePerMonth.toStringAsFixed(2)} €/mo',
+                                        child: Container(
+                                          width: 8,
+                                          height: 8,
+                                          decoration: BoxDecoration(
+                                            color: isDarkMode ? Colors.amber.shade300 : Colors.amber.shade700,
+                                            borderRadius: BorderRadius.circular(4),
+                                            boxShadow: const [
+                                              BoxShadow(
+                                                color: Colors.black38,
+                                                blurRadius: 3,
+                                                offset: Offset(0, 1),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
                                       ),
                                     ),
-                                  ),
-                                ],
-                              ),
+                                  ],
+                                );
+                              },
                             ),
                           ),
                           const SizedBox(width: 12),
