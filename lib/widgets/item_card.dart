@@ -2,11 +2,94 @@ import 'package:flutter/material.dart';
 
 import '../models/item.dart';
 
+class SteppedProgressBar extends StatelessWidget {
+  final int goalMonths;
+  final int usedMonths;
+  final double minHeight;
+
+  const SteppedProgressBar({
+    super.key,
+    required this.goalMonths,
+    required this.usedMonths,
+    this.minHeight = 7.0,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDarkMode = theme.brightness == Brightness.dark;
+
+    final steps = goalMonths > 0 ? goalMonths : 1;
+    final isGoalReached = usedMonths >= steps;
+
+    // Calculate extra months beyond goal
+    final extraMonths = isGoalReached ? (usedMonths - steps) : 0;
+    // Overwritten step count in current cycle
+    final overwrittenCount = extraMonths % steps;
+    // Full double cycle completed
+    final doubleCycleComplete = extraMonths >= steps;
+
+    // Track color (unfilled steps)
+    final unfilledColor = isGoalReached
+        ? (isDarkMode ? Colors.green.shade900.withValues(alpha: 0.3) : Colors.green.shade100)
+        : theme.colorScheme.surfaceContainerHighest;
+
+    // Base filled color
+    final baseFilledColor = isGoalReached
+        ? (isDarkMode ? Colors.green.shade400 : Colors.green.shade600)
+        : theme.colorScheme.primary;
+
+    // Overwritten color for months that surpass the goal (distinct shade!)
+    final overwrittenColor = isDarkMode
+        ? Colors.amber.shade300
+        : Colors.teal.shade800;
+
+    return Row(
+      children: List.generate(steps, (index) {
+        Color stepColor;
+
+        if (!isGoalReached) {
+          // Goal In Progress (used < goal)
+          if (index < usedMonths) {
+            stepColor = baseFilledColor;
+          } else {
+            stepColor = unfilledColor;
+          }
+        } else {
+          // Goal Reached / Surpassed
+          if (doubleCycleComplete) {
+            stepColor = overwrittenColor;
+          } else if (index < overwrittenCount) {
+            // Surpassed months overwrite the start of the bar in a distinct shade!
+            stepColor = overwrittenColor;
+          } else {
+            stepColor = baseFilledColor;
+          }
+        }
+
+        return Expanded(
+          child: Container(
+            margin: EdgeInsets.only(
+              right: index == steps - 1 ? 0 : (steps > 16 ? 1.5 : 2.5),
+            ),
+            height: minHeight,
+            decoration: BoxDecoration(
+              color: stepColor,
+              borderRadius: BorderRadius.circular(minHeight / 2),
+            ),
+          ),
+        );
+      }),
+    );
+  }
+}
+
 class ItemCard extends StatelessWidget {
   final Item item;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
   final ValueChanged<MonthlyReviewStatus> onUpdateMonthlyStatus;
+  final bool showSegmentedProgressBar;
 
   const ItemCard({
     super.key,
@@ -14,6 +97,7 @@ class ItemCard extends StatelessWidget {
     required this.onEdit,
     required this.onDelete,
     required this.onUpdateMonthlyStatus,
+    this.showSegmentedProgressBar = true,
   });
 
   @override
@@ -37,8 +121,6 @@ class ItemCard extends StatelessWidget {
     final primaryAccentColor = isGoalReached
         ? (isDarkMode ? Colors.green.shade300 : Colors.green.shade800)
         : theme.colorScheme.primary;
-
-    final progressRatio = (item.progressRatio).clamp(0.0, 1.0);
 
     return Card(
       elevation: isGoalReached ? 3 : 1,
@@ -505,22 +587,28 @@ class ItemCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 6),
 
-                // Progress Bar (Pill shape, anchored to the bottom of the card)
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(8),
-                  child: LinearProgressIndicator(
-                    value: progressRatio,
-                    minHeight: 7,
-                    backgroundColor: isGoalReached
-                        ? (isDarkMode ? Colors.green.shade900.withValues(alpha: 0.5) : Colors.green.shade100)
-                        : theme.colorScheme.surfaceContainerHighest,
-                    valueColor: AlwaysStoppedAnimation<Color>(
-                      isGoalReached
-                          ? (isDarkMode ? Colors.green.shade400 : Colors.green.shade600)
-                          : theme.colorScheme.primary,
-                    ),
-                  ),
-                ),
+                // Progress Bar (Stepped Segmented vs Continuous Linear)
+                showSegmentedProgressBar
+                    ? SteppedProgressBar(
+                        goalMonths: item.goalDurationMonths,
+                        usedMonths: item.usedDurationMonths,
+                        minHeight: 7,
+                      )
+                    : ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: LinearProgressIndicator(
+                          value: (item.progressRatio).clamp(0.0, 1.0),
+                          minHeight: 7,
+                          backgroundColor: isGoalReached
+                              ? (isDarkMode ? Colors.green.shade900.withValues(alpha: 0.5) : Colors.green.shade100)
+                              : theme.colorScheme.surfaceContainerHighest,
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            isGoalReached
+                                ? (isDarkMode ? Colors.green.shade400 : Colors.green.shade600)
+                                : theme.colorScheme.primary,
+                          ),
+                        ),
+                      ),
               ],
             ),
           ],
@@ -535,6 +623,7 @@ class CompactItemCard extends StatelessWidget {
   final VoidCallback onEdit;
   final VoidCallback onDelete;
   final ValueChanged<MonthlyReviewStatus> onUpdateMonthlyStatus;
+  final bool showSegmentedProgressBar;
 
   const CompactItemCard({
     super.key,
@@ -542,6 +631,7 @@ class CompactItemCard extends StatelessWidget {
     required this.onEdit,
     required this.onDelete,
     required this.onUpdateMonthlyStatus,
+    this.showSegmentedProgressBar = true,
   });
 
   @override
@@ -560,8 +650,6 @@ class CompactItemCard extends StatelessWidget {
     final cardBorderColor = isGoalReached
         ? (isDarkMode ? Colors.green.shade400 : Colors.green.shade600)
         : theme.colorScheme.outlineVariant;
-
-    final progressRatio = (item.progressRatio).clamp(0.0, 1.0);
 
     return Card(
       elevation: isGoalReached ? 2 : 0.5,
@@ -789,12 +877,11 @@ class CompactItemCard extends StatelessWidget {
               ],
             ),
 
-            // Bottom Anchored Group (Used Rate & Month Numbers + Progress Bar)
+            // Bottom Anchored Group (Used Rate & Month Numbers + Stepped Progress Bar)
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: [
-                const SizedBox(height: 0), //no padding needed between title and progress bar
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -823,24 +910,30 @@ class CompactItemCard extends StatelessWidget {
                     ),
                   ],
                 ),
-                const SizedBox(height: 6), //padding between text and bar
+                const SizedBox(height: 6),
 
-                // Progress Bar
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(6),
-                  child: LinearProgressIndicator(
-                    value: progressRatio,
-                    minHeight: 5,
-                    backgroundColor: isGoalReached
-                        ? (isDarkMode ? Colors.green.shade900.withValues(alpha: 0.5) : Colors.green.shade100)
-                        : theme.colorScheme.surfaceContainerHighest,
-                    valueColor: AlwaysStoppedAnimation<Color>(
-                      isGoalReached
-                          ? (isDarkMode ? Colors.green.shade400 : Colors.green.shade600)
-                          : theme.colorScheme.primary,
-                    ),
-                  ),
-                ),
+                // Progress Bar (Stepped Segmented vs Continuous Linear)
+                showSegmentedProgressBar
+                    ? SteppedProgressBar(
+                        goalMonths: item.goalDurationMonths,
+                        usedMonths: item.usedDurationMonths,
+                        minHeight: 5,
+                      )
+                    : ClipRRect(
+                        borderRadius: BorderRadius.circular(6),
+                        child: LinearProgressIndicator(
+                          value: (item.progressRatio).clamp(0.0, 1.0),
+                          minHeight: 5,
+                          backgroundColor: isGoalReached
+                              ? (isDarkMode ? Colors.green.shade900.withValues(alpha: 0.5) : Colors.green.shade100)
+                              : theme.colorScheme.surfaceContainerHighest,
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            isGoalReached
+                                ? (isDarkMode ? Colors.green.shade400 : Colors.green.shade600)
+                                : theme.colorScheme.primary,
+                          ),
+                        ),
+                      ),
               ],
             ),
           ],

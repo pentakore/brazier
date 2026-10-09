@@ -9,6 +9,7 @@ class ItemsView extends StatefulWidget {
   final String searchQuery;
   final Category? selectedCategoryFilter;
   final bool showOnlyGoalReached;
+  final bool showSegmentedProgressBar;
   final ValueChanged<String> onSearchQueryChanged;
   final ValueChanged<Category?> onCategoryFilterChanged;
   final ValueChanged<bool> onGoalFilterChanged;
@@ -23,6 +24,7 @@ class ItemsView extends StatefulWidget {
     required this.searchQuery,
     required this.selectedCategoryFilter,
     required this.showOnlyGoalReached,
+    this.showSegmentedProgressBar = true,
     required this.onSearchQueryChanged,
     required this.onCategoryFilterChanged,
     required this.onGoalFilterChanged,
@@ -42,6 +44,7 @@ class _ItemsViewState extends State<ItemsView> {
     return _isCompactView
         ? CompactItemCard(
             item: item,
+            showSegmentedProgressBar: widget.showSegmentedProgressBar,
             onEdit: () => widget.onEditItem(item),
             onDelete: () => widget.onDeleteItem(item.id),
             onUpdateMonthlyStatus: (newStatus) =>
@@ -49,6 +52,7 @@ class _ItemsViewState extends State<ItemsView> {
           )
         : ItemCard(
             item: item,
+            showSegmentedProgressBar: widget.showSegmentedProgressBar,
             onEdit: () => widget.onEditItem(item),
             onDelete: () => widget.onDeleteItem(item.id),
             onUpdateMonthlyStatus: (newStatus) =>
