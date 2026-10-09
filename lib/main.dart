@@ -175,6 +175,29 @@ class _HomeScreenState extends State<HomeScreen> {
     return _items.where((i) => i.currentMonthlyStatus == MonthlyReviewStatus.pending).length;
   }
 
+  void _reorderItems(int oldFilteredIndex, int newFilteredIndex) {
+    setState(() {
+      final filteredList = _filteredItems;
+      if (oldFilteredIndex < 0 || oldFilteredIndex >= filteredList.length) return;
+
+      final movedItem = filteredList[oldFilteredIndex];
+      final oldRealIndex = _items.indexOf(movedItem);
+
+      if (newFilteredIndex > oldFilteredIndex) {
+        newFilteredIndex -= 1;
+      }
+
+      if (newFilteredIndex < 0 || newFilteredIndex >= filteredList.length) return;
+      final targetItem = filteredList[newFilteredIndex];
+      final newRealIndex = _items.indexOf(targetItem);
+
+      if (oldRealIndex != -1 && newRealIndex != -1) {
+        _items.removeAt(oldRealIndex);
+        _items.insert(newRealIndex, movedItem);
+      }
+    });
+  }
+
   void _addCategory(Category cat) {
     setState(() {
       _categories.add(cat);
@@ -502,6 +525,7 @@ class _HomeScreenState extends State<HomeScreen> {
               onEditItem: _openEditDialog,
               onDeleteItem: _deleteItem,
               onUpdateMonthlyStatus: _updateMonthlyStatus,
+              onReorderItems: _reorderItems,
             ),
 
             // TAB 1: Monthly Review View
