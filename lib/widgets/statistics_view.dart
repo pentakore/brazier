@@ -185,8 +185,9 @@ class ItemsDetailScreen extends StatelessWidget {
                             child: LayoutBuilder(
                               builder: (context, constraints) {
                                 final totalWidth = constraints.maxWidth;
-                                final goalLeft = (totalWidth * goalRatio).clamp(0.0, totalWidth);
-                                final markerLeft = (goalLeft - 4).clamp(0.0, totalWidth - 8);
+                                final goalLeft = totalWidth > 0 ? (totalWidth * goalRatio).clamp(0.0, totalWidth) : 0.0;
+                                final maxMarkerLeft = max(0.0, totalWidth - 8);
+                                final markerLeft = maxMarkerLeft > 0 ? (goalLeft - 4).clamp(0.0, maxMarkerLeft) : 0.0;
 
                                 return Stack(
                                   clipBehavior: Clip.none,
