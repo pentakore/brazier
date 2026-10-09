@@ -1,3 +1,4 @@
+import 'dart:math';
 import 'package:flutter/material.dart';
 
 import '../models/item.dart';
@@ -19,6 +20,14 @@ class ItemsDetailScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDarkMode = theme.brightness == Brightness.dark;
+
+    // Baseline scaling: max total price and max monthly cost across items in this subpage
+    final maxPrice = items.fold(0.0, (maxVal, item) => item.price > maxVal ? item.price : maxVal);
+    final maxMonthlyCost = items.fold(0.0, (maxVal, item) {
+      final usedCost = item.usedDurationMonths > 0 ? item.usedPricePerMonth : item.goalPricePerMonth;
+      final itemMax = max(item.goalPricePerMonth, usedCost);
+      return itemMax > maxVal ? itemMax : maxVal;
+    });
 
     return Scaffold(
       appBar: AppBar(
@@ -52,154 +61,199 @@ class ItemsDetailScreen extends StatelessWidget {
                 ),
               ),
             )
-          : Column(
-              children: [
-                // Column Headers Row
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                  color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
-                  child: const Row(
-                    children: [
-                      Expanded(
-                        flex: 3,
-                        child: Text(
-                          'Item',
-                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
-                        ),
-                      ),
-                      SizedBox(width: 6),
-                      Expanded(
-                        flex: 2,
-                        child: Text(
-                          'Price',
-                          textAlign: TextAlign.right,
-                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
-                        ),
-                      ),
-                      SizedBox(width: 6),
-                      Expanded(
-                        flex: 2,
-                        child: Text(
-                          'Target/mo',
-                          textAlign: TextAlign.right,
-                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
-                        ),
-                      ),
-                      SizedBox(width: 6),
-                      Expanded(
-                        flex: 2,
-                        child: Text(
-                          'Current/mo',
-                          textAlign: TextAlign.right,
-                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
-                        ),
-                      ),
-                    ],
+          : ListView.separated(
+              itemCount: items.length,
+              padding: const EdgeInsets.all(16),
+              separatorBuilder: (context, index) => const SizedBox(height: 12),
+              itemBuilder: (context, index) {
+                final item = items[index];
+                final cat = item.category;
+
+                // Total Price ratio (scaled to maxPrice)
+                final priceRatio = maxPrice > 0 ? (item.price / maxPrice).clamp(0.05, 1.0) : 0.0;
+
+                // Monthly Progress ratios (scaled relative to maxMonthlyCost so items are scaled between each other)
+                final usedPrice = item.usedDurationMonths > 0 ? item.usedPricePerMonth : item.goalPricePerMonth;
+                final goalRatio = maxMonthlyCost > 0 ? (item.goalPricePerMonth / maxMonthlyCost).clamp(0.02, 1.0) : 0.0;
+                final usedRatio = maxMonthlyCost > 0 ? (usedPrice / maxMonthlyCost).clamp(0.02, 1.0) : 0.0;
+
+                final outerRatio = max(usedRatio, goalRatio);
+                final innerRatio = min(usedRatio, goalRatio);
+
+                return Container(
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.surfaceContainerLowest,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: theme.colorScheme.outlineVariant),
                   ),
-                ),
-                const Divider(height: 1),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Header Row: Category Icon + Item Name + Goal Badge
+                      Row(
+                        children: [
+                          CircleAvatar(
+                            radius: 16,
+                            backgroundColor: cat.color.withValues(alpha: isDarkMode ? 0.25 : 0.15),
+                            child: Icon(cat.icon, size: 16, color: cat.color),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              item.name,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 15,
+                              ),
+                            ),
+                          ),
+                          if (item.isGoalReached)
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                              decoration: BoxDecoration(
+                                color: isDarkMode ? Colors.green.shade900.withValues(alpha: 0.5) : Colors.green.shade100,
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Text(
+                                'Goal Reached',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.bold,
+                                  color: isDarkMode ? Colors.green.shade300 : Colors.green.shade900,
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
 
-                // Single-Row Columnar Items List
-                Expanded(
-                  child: ListView.separated(
-                    itemCount: items.length,
-                    padding: const EdgeInsets.symmetric(vertical: 4),
-                    separatorBuilder: (context, index) => const Divider(height: 1),
-                    itemBuilder: (context, index) {
-                      final item = items[index];
-                      final cat = item.category;
+                      // Bar 1: Total Price Bar (scaled to maxPrice)
+                      Row(
+                        children: [
+                          SizedBox(
+                            width: 90,
+                            child: Text(
+                              'Total Price:',
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: isDarkMode ? Colors.grey.shade400 : Colors.grey.shade700,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
+                          Expanded(
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(4),
+                              child: LinearProgressIndicator(
+                                value: priceRatio,
+                                minHeight: 8,
+                                backgroundColor: theme.colorScheme.surfaceContainerHighest,
+                                valueColor: AlwaysStoppedAnimation<Color>(theme.colorScheme.primary),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          SizedBox(
+                            width: 80,
+                            child: Text(
+                              '${item.price.toStringAsFixed(2)} €',
+                              textAlign: TextAlign.right,
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 13,
+                                color: theme.colorScheme.onSurface,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 10),
 
-                      return Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                        child: Row(
-                          children: [
-                            // Column 0: Category Icon + Item Name
-                            Expanded(
-                              flex: 3,
-                              child: Row(
+                      // Bar 2: Layered Monthly Cost Progress Bar (scaled to maxMonthlyCost with gray track visible)
+                      Row(
+                        children: [
+                          SizedBox(
+                            width: 90,
+                            child: Text(
+                              'Monthly Cost:',
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: isDarkMode ? Colors.grey.shade400 : Colors.grey.shade700,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
+                          Expanded(
+                            child: Tooltip(
+                              message: 'Target Goal: ${item.goalPricePerMonth.toStringAsFixed(2)} €/mo (${item.goalDurationMonths} mo)\nActual Used: ${item.usedDurationMonths > 0 ? '${item.usedPricePerMonth.toStringAsFixed(2)} €/mo' : 'N/A'} (${item.usedDurationMonths} mo)',
+                              child: Stack(
                                 children: [
-                                  CircleAvatar(
-                                    radius: 14,
-                                    backgroundColor: cat.color.withValues(alpha: isDarkMode ? 0.25 : 0.15),
-                                    child: Icon(cat.icon, size: 14, color: cat.color),
+                                  // Gray Background Track (100% width)
+                                  Container(
+                                    height: 8,
+                                    decoration: BoxDecoration(
+                                      color: theme.colorScheme.surfaceContainerHighest,
+                                      borderRadius: BorderRadius.circular(4),
+                                    ),
                                   ),
-                                  const SizedBox(width: 8),
-                                  Expanded(
-                                    child: Text(
-                                      item.name,
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: const TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 13,
+
+                                  // Layer 1: Outer / Longer Bar (Goal or Used)
+                                  ClipRRect(
+                                    borderRadius: BorderRadius.circular(4),
+                                    child: LinearProgressIndicator(
+                                      value: outerRatio,
+                                      minHeight: 8,
+                                      backgroundColor: Colors.transparent,
+                                      valueColor: AlwaysStoppedAnimation<Color>(
+                                        item.isGoalReached
+                                            ? (isDarkMode ? Colors.green.shade400 : Colors.green.shade600)
+                                            : (isDarkMode ? Colors.indigo.shade900.withValues(alpha: 0.6) : Colors.indigo.shade100),
+                                      ),
+                                    ),
+                                  ),
+
+                                  // Layer 2: Inner / Shorter Bar rendered ON TOP
+                                  ClipRRect(
+                                    borderRadius: BorderRadius.circular(4),
+                                    child: LinearProgressIndicator(
+                                      value: innerRatio,
+                                      minHeight: 8,
+                                      backgroundColor: Colors.transparent,
+                                      valueColor: AlwaysStoppedAnimation<Color>(
+                                        item.isGoalReached
+                                            ? (isDarkMode ? Colors.green.shade900 : Colors.green.shade200)
+                                            : theme.colorScheme.primary,
                                       ),
                                     ),
                                   ),
                                 ],
                               ),
                             ),
-                            const SizedBox(width: 6),
-
-                            // Column 1: Price
-                            Expanded(
-                              flex: 2,
-                              child: Text(
-                                '${item.price.toStringAsFixed(2)} €',
-                                textAlign: TextAlign.right,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 12,
-                                  color: theme.colorScheme.onSurface,
-                                ),
+                          ),
+                          const SizedBox(width: 12),
+                          SizedBox(
+                            width: 80,
+                            child: Text(
+                              item.usedDurationMonths > 0
+                                  ? '${item.usedPricePerMonth.toStringAsFixed(2)} €/mo'
+                                  : '${item.goalPricePerMonth.toStringAsFixed(2)} €/mo',
+                              textAlign: TextAlign.right,
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 12,
+                                color: item.isGoalReached
+                                    ? (isDarkMode ? Colors.green.shade300 : Colors.green.shade800)
+                                    : theme.colorScheme.primary,
                               ),
                             ),
-                            const SizedBox(width: 6),
-
-                            // Column 2: Target Monthly Cost
-                            Expanded(
-                              flex: 2,
-                              child: Text(
-                                '${item.goalPricePerMonth.toStringAsFixed(2)} €',
-                                textAlign: TextAlign.right,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 12,
-                                  color: theme.colorScheme.primary,
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 6),
-
-                            // Column 3: Current Monthly Cost
-                            Expanded(
-                              flex: 2,
-                              child: Text(
-                                item.usedDurationMonths > 0
-                                    ? '${item.usedPricePerMonth.toStringAsFixed(2)} €'
-                                    : 'N/A',
-                                textAlign: TextAlign.right,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 12,
-                                  color: item.isGoalReached
-                                      ? (isDarkMode ? Colors.green.shade300 : Colors.green.shade800)
-                                      : (isDarkMode ? Colors.grey.shade300 : Colors.grey.shade800),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      );
-                    },
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
-                ),
-              ],
+                );
+              },
             ),
     );
   }
