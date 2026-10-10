@@ -1,19 +1,97 @@
 import 'package:flutter/material.dart';
 
 import '../models/item.dart';
+import '../theme/app_theme.dart';
 
-const Color fireOrange = Color(0xFFFF5226); // Single unified Fire Orange Accent
+const Color fireOrange = AppColors.fireOrange; // Single unified Fire Orange Accent from AppTheme
 
+/// Color of [gradient] at position [t] (0..1). Assumes evenly spaced stops.
+/// Shared by SteppedProgressBar and the continuous bar.
+Color sampleGradient(Gradient gradient, double t) {
+  final colors = gradient.colors;
+  if (colors.length == 1) return colors.first;
+  final scaled = t.clamp(0.0, 1.0) * (colors.length - 1);
+  final i = scaled.floor().clamp(0, colors.length - 2);
+  return Color.lerp(colors[i], colors[i + 1], scaled - i)!;
+}
+
+/// [ratio] is used / goal and is NOT clamped: 1.0 = goal reached,
+/// 1.25 = a quarter into the second cycle, and so on.
+Widget continuousProgressBar({
+  required double ratio,
+  required Color trackColor,
+  double height = 5,
+  Gradient baseGradient = AppGradients.flameGradient,
+}) {
+  final safeRatio = (ratio.isNaN || ratio < 0) ? 0.0 : ratio;
+
+  // Head position within the bar (0..1). A full cycle puts the head at the end.
+  double head = safeRatio % 1;
+  if (head == 0 && safeRatio > 0) head = 1;
+
+  final goalReached = safeRatio >= 1;
+
+  return ClipRRect(
+    borderRadius: BorderRadius.circular(height * 1.2),
+    child: Container(
+      height: height,
+      color: trackColor,
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final width = constraints.maxWidth;
+          final headWidth = width * head;
+
+          return Row(
+            children: [
+              // Part from the start of the bar up to the head.
+              // At the head t = 1 (orange), going back it fades toward yellow.
+              if (safeRatio > 0)
+                Container(
+                  width: headWidth,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        sampleGradient(baseGradient, 1 - head),
+                        sampleGradient(baseGradient, 1),
+                      ],
+                    ),
+                  ),
+                ),
+
+              // Part after the head, only once the goal has been passed.
+              // It holds the older steps of the previous cycle,
+              // from t = 1 - head down to t = 0, left to right.
+              if (goalReached && head < 1)
+                Container(
+                  width: width - headWidth,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        sampleGradient(baseGradient, 0),
+                        sampleGradient(baseGradient, 1 - head),
+                      ],
+                    ),
+                  ),
+                ),
+            ],
+          );
+        },
+      ),
+    ),
+  );
+}
 class SteppedProgressBar extends StatelessWidget {
   final int goalMonths;
   final int usedMonths;
   final double minHeight;
+  final Gradient baseGradient;
 
   const SteppedProgressBar({
     super.key,
     required this.goalMonths,
     required this.usedMonths,
     this.minHeight = 7.0,
+    this.baseGradient = AppGradients.flameGradient,
   });
 
   @override
@@ -22,57 +100,47 @@ class SteppedProgressBar extends StatelessWidget {
     final isDarkMode = theme.brightness == Brightness.dark;
 
     final steps = goalMonths > 0 ? goalMonths : 1;
-    final isGoalReached = usedMonths >= steps;
+    final used = usedMonths < 0 ? 0 : usedMonths;
+    final goalReached = used >= steps;
 
-    // Calculate extra months beyond goal
-    final extraMonths = isGoalReached ? (usedMonths - steps) : 0;
-    // Overwritten step count in current cycle
-    final overwrittenCount = extraMonths % steps;
-    // Full double cycle completed
-    final doubleCycleComplete = extraMonths >= steps;
+    // Index of the newest filled step (the head).
+    // Equivalent to the continuous bar's head = ratio % 1 (1 at a full cycle).
+    final headIndex = used == 0 ? -1 : (used - 1) % steps;
 
-    // Track color (unfilled steps)
     final unfilledColor = isDarkMode
         ? const Color(0xFF28303F)
         : theme.colorScheme.surfaceContainerHighest;
 
-    // Base filled color (Single unified Fire Orange)
-    const baseFilledColor = fireOrange;
-
-    // Overwritten color for months that surpass the goal (Lighter White/Amber)
-    final overwrittenColor = isDarkMode ? Colors.white70 : const Color(0xFF334155);
+    final gap = steps > 16 ? 1.5 : 2.5;
 
     return Row(
       children: List.generate(steps, (index) {
-        Color stepColor;
+        final isFilled = goalReached || index < used;
 
-        if (!isGoalReached) {
-          // Goal In Progress (used < goal)
-          if (index < usedMonths) {
-            stepColor = baseFilledColor;
-          } else {
-            stepColor = unfilledColor;
-          }
-        } else {
-          // Goal Reached / Surpassed
-          if (doubleCycleComplete) {
-            stepColor = overwrittenColor;
-          } else if (index < overwrittenCount) {
-            // Surpassed months overwrite the start of the bar in a distinct shade!
-            stepColor = overwrittenColor;
-          } else {
-            stepColor = baseFilledColor;
-          }
+        Gradient? gradient;
+        if (isFilled) {
+          // Steps behind the head, wrapping around the bar.
+          final behind = (headIndex - index) % steps;
+
+          // Head ends at t = 1 (orange); each step back moves toward t = 0.
+          final tRight = 1 - behind / steps;
+          final tLeft = 1 - (behind + 1) / steps;
+
+          gradient = LinearGradient(
+            colors: [
+              sampleGradient(baseGradient, tLeft),
+              sampleGradient(baseGradient, tRight),
+            ],
+          );
         }
 
         return Expanded(
           child: Container(
-            margin: EdgeInsets.only(
-              right: index == steps - 1 ? 0 : (steps > 16 ? 1.5 : 2.5),
-            ),
+            margin: EdgeInsets.only(right: index == steps - 1 ? 0 : gap),
             height: minHeight,
             decoration: BoxDecoration(
-              color: stepColor,
+              color: isFilled ? null : unfilledColor,
+              gradient: gradient,
               borderRadius: BorderRadius.circular(minHeight / 2),
             ),
           ),
@@ -320,7 +388,7 @@ class ItemCard extends StatelessWidget {
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                               decoration: BoxDecoration(
-                                color: fireOrange,
+                                gradient: AppGradients.orangeGradient,
                                 borderRadius: BorderRadius.circular(20),
                               ),
                               child: const Row(
@@ -331,9 +399,9 @@ class ItemCard extends StatelessWidget {
                                   Text(
                                     'Goal Reached',
                                     style: TextStyle(
-                                      color: Colors.white,
                                       fontWeight: FontWeight.bold,
                                       fontSize: 11,
+                                      color: Colors.white,
                                     ),
                                   ),
                                 ],
@@ -405,7 +473,7 @@ class ItemCard extends StatelessWidget {
                         style: theme.textTheme.titleLarge?.copyWith(
                           fontWeight: FontWeight.w800,
                           fontSize: 17,
-                          color: fireOrange,
+                          color: theme.colorScheme.onSurface,
                         ),
                       ),
                     ),
@@ -455,7 +523,7 @@ class ItemCard extends StatelessWidget {
                                 style: theme.textTheme.titleMedium?.copyWith(
                                   fontWeight: FontWeight.bold,
                                   fontSize: 14,
-                                  color: fireOrange,
+                                  color: theme.colorScheme.onSurface,
                                 ),
                               ),
                             ),
@@ -504,7 +572,7 @@ class ItemCard extends StatelessWidget {
                                 style: theme.textTheme.titleMedium?.copyWith(
                                   fontWeight: FontWeight.bold,
                                   fontSize: 14,
-                                  color: theme.colorScheme.onSurface,
+                                  color: fireOrange,
                                 ),
                               ),
                             ),
@@ -550,14 +618,12 @@ class ItemCard extends StatelessWidget {
                         usedMonths: item.usedDurationMonths,
                         minHeight: 7,
                       )
-                    : ClipRRect(
-                        borderRadius: BorderRadius.circular(8),
-                        child: LinearProgressIndicator(
-                          value: (item.progressRatio).clamp(0.0, 1.0),
-                          minHeight: 7,
-                          backgroundColor: isDarkMode ? const Color(0xFF28303F) : theme.colorScheme.surfaceContainerHighest,
-                          valueColor: const AlwaysStoppedAnimation<Color>(fireOrange),
-                        ),
+                    : continuousProgressBar(
+                        ratio: item.progressRatio, // don't clamp it anymore
+                        trackColor: isDarkMode
+                            ? const Color(0xFF28303F)
+                            : theme.colorScheme.surfaceContainerHighest,
+                        height: 7,
                       ),
               ],
             ),
@@ -824,7 +890,6 @@ class CompactItemCard extends StatelessWidget {
                         color: fireOrange,
                       ),
                     ),
-
                     // Month Numbers
                     Text(
                       '${item.usedDurationMonths}/${item.goalDurationMonths} mo',
@@ -840,19 +905,17 @@ class CompactItemCard extends StatelessWidget {
                 // Progress Bar (Stepped Segmented vs Continuous Linear)
                 showSegmentedProgressBar
                     ? SteppedProgressBar(
-                        goalMonths: item.goalDurationMonths,
-                        usedMonths: item.usedDurationMonths,
-                        minHeight: 5,
-                      )
-                    : ClipRRect(
-                        borderRadius: BorderRadius.circular(6),
-                        child: LinearProgressIndicator(
-                          value: (item.progressRatio).clamp(0.0, 1.0),
-                          minHeight: 5,
-                          backgroundColor: isDarkMode ? const Color(0xFF28303F) : theme.colorScheme.surfaceContainerHighest,
-                          valueColor: const AlwaysStoppedAnimation<Color>(fireOrange),
-                        ),
-                      ),
+                  goalMonths: item.goalDurationMonths,
+                  usedMonths: item.usedDurationMonths,
+                  minHeight: 5,
+                )
+                    : continuousProgressBar(
+                  ratio: item.progressRatio, // don't clamp it anymore
+                  trackColor: isDarkMode
+                      ? const Color(0xFF28303F)
+                      : theme.colorScheme.surfaceContainerHighest,
+                  height: 5,
+                ),
               ],
             ),
           ],

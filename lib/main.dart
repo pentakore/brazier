@@ -2,6 +2,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 
 import 'models/item.dart';
+import 'theme/app_theme.dart';
 import 'widgets/category_manager_dialog.dart';
 import 'widgets/item_dialog.dart';
 import 'widgets/items_view.dart';
@@ -31,35 +32,30 @@ class _BrazierAppState extends State<BrazierApp> {
 
   @override
   Widget build(BuildContext context) {
-    const fireOrange = Color(0xFFFF5226); // Single unified Fire Orange Accent
-    const charcoalScaffold = Color(0xFF12151C); // Charcoal Background
-    const charcoalCard = Color(0xFF1C212B); // Charcoal Card Background
-    const charcoalContainer = Color(0xFF252B38);
-
     final darkColorScheme = ColorScheme.fromSeed(
-      seedColor: fireOrange,
+      seedColor: AppColors.primaryOrange,
       brightness: Brightness.dark,
     ).copyWith(
-      primary: fireOrange,
+      primary: AppColors.primaryOrange,
       onPrimary: Colors.white,
-      secondary: fireOrange,
-      tertiary: fireOrange,
-      surface: charcoalScaffold,
-      surfaceContainerLow: charcoalCard,
-      surfaceContainerLowest: const Color(0xFF161A23),
-      surfaceContainerHighest: charcoalContainer,
+      secondary: AppColors.primaryOrange,
+      tertiary: AppColors.primaryOrange,
+      surface: AppColors.scaffoldBackground,
+      surfaceContainerLow: AppColors.cardBackground,
+      surfaceContainerLowest: AppColors.scaffoldBackground,
+      surfaceContainerHighest: AppColors.containerBackground,
       onSurface: const Color(0xFFE2E8F0),
       outline: const Color(0xFF3B4454),
-      outlineVariant: const Color(0xFF282E3D),
+      outlineVariant: AppColors.cardBorder,
     );
 
     final lightColorScheme = ColorScheme.fromSeed(
-      seedColor: fireOrange,
+      seedColor: AppColors.primaryOrange,
       brightness: Brightness.light,
     ).copyWith(
-      primary: fireOrange,
-      secondary: fireOrange,
-      tertiary: fireOrange,
+      primary: AppColors.primaryOrange,
+      secondary: AppColors.primaryOrange,
+      tertiary: AppColors.primaryOrange,
       surface: const Color(0xFFF1F4F9),
       surfaceContainerLow: const Color(0xFFE2E8F0),
       surfaceContainerHighest: const Color(0xFFCBD5E1),
@@ -486,7 +482,7 @@ class _HomeScreenState extends State<HomeScreen> {
               height: 28,
               width: 28,
               errorBuilder: (context, error, stackTrace) =>
-                  const Icon(Icons.local_fire_department, color: Color(0xFFFF5226)),
+                  const Icon(Icons.local_fire_department, color: AppColors.primaryOrange),
             ),
             const SizedBox(width: 8),
             Expanded(

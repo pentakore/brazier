@@ -2,9 +2,10 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 
 import '../models/item.dart';
+import '../theme/app_theme.dart';
 import 'summary_card.dart';
 
-const Color fireOrange = Color(0xFFFF5226); // Single unified Fire Orange Accent
+const Color fireOrange = AppColors.fireOrange; // Single unified Fire Orange Accent from AppTheme
 
 class ItemsDetailScreen extends StatelessWidget {
   final String title;

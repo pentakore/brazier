@@ -3,8 +3,9 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 
 import '../models/item.dart';
+import '../theme/app_theme.dart';
 
-const Color fireOrange = Color(0xFFFF5226); // Single unified Fire Orange Accent
+const Color fireOrange = AppColors.fireOrange; // Single unified Fire Orange Accent from AppTheme
 
 class ReviewView extends StatefulWidget {
   final List<Item> items;
@@ -373,23 +374,37 @@ class _ReviewViewState extends State<ReviewView> {
 
               // USED Button (Single Fire Orange)
               Flexible(
-                child: ElevatedButton.icon(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: fireOrange,
-                    foregroundColor: Colors.white,
-                    elevation: 2,
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(30),
-                    ),
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    gradient: AppGradients.orangeGradient,
+                    borderRadius: BorderRadius.circular(30),
+                    boxShadow: const [
+                      BoxShadow(
+                        color: Colors.black26,
+                        blurRadius: 4,
+                        offset: Offset(0, 2),
+                      ),
+                    ],
                   ),
-                  onPressed: () => _handleReview(currentItem, true),
-                  icon: const Icon(Icons.check, size: 20),
-                  label: const FittedBox(
-                    fit: BoxFit.scaleDown,
-                    child: Text(
-                      'Used (+1 mo)',
-                      style: TextStyle(fontWeight: FontWeight.bold),
+                  child: ElevatedButton.icon(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.transparent,
+                      shadowColor: Colors.transparent,
+                      foregroundColor: Colors.white,
+                      elevation: 0,
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(30),
+                      ),
+                    ),
+                    onPressed: () => _handleReview(currentItem, true),
+                    icon: const Icon(Icons.check, size: 20),
+                    label: const FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text(
+                        'Used (+1 mo)',
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
                     ),
                   ),
                 ),

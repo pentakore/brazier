@@ -30,7 +30,7 @@ class SummaryCard extends StatelessWidget {
       decoration: BoxDecoration(
         gradient: const LinearGradient(
           colors: [
-            Color(0xFFFFDFB8),
+            Color(0xFFFFC57A),
             Color(0xFFFF9100),
             Color(0xFFFF6F00),
             Color(0xFFFF2600),
