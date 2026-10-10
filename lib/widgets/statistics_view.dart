@@ -2,7 +2,10 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 
 import '../models/item.dart';
+import '../theme/app_theme.dart';
 import 'summary_card.dart';
+
+const Color fireOrange = AppColors.fireOrange; // Single unified Fire Orange Accent from AppTheme
 
 class ItemsDetailScreen extends StatelessWidget {
   final String title;
@@ -80,9 +83,11 @@ class ItemsDetailScreen extends StatelessWidget {
                 return Container(
                   padding: const EdgeInsets.all(14),
                   decoration: BoxDecoration(
-                    color: theme.colorScheme.surfaceContainerLowest,
+                    color: isDarkMode ? const Color(0xFF1C222D) : theme.colorScheme.surfaceContainerLowest,
                     borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: theme.colorScheme.outlineVariant),
+                    border: Border.all(
+                      color: isDarkMode ? const Color(0xFF2B3342) : theme.colorScheme.outlineVariant,
+                    ),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -111,15 +116,15 @@ class ItemsDetailScreen extends StatelessWidget {
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                               decoration: BoxDecoration(
-                                color: isDarkMode ? Colors.green.shade900.withValues(alpha: 0.5) : Colors.green.shade100,
+                                color: fireOrange,
                                 borderRadius: BorderRadius.circular(12),
                               ),
-                              child: Text(
+                              child: const Text(
                                 'Goal Reached',
                                 style: TextStyle(
                                   fontSize: 11,
                                   fontWeight: FontWeight.bold,
-                                  color: isDarkMode ? Colors.green.shade300 : Colors.green.shade900,
+                                  color: Colors.white,
                                 ),
                               ),
                             ),
@@ -146,8 +151,8 @@ class ItemsDetailScreen extends StatelessWidget {
                               child: LinearProgressIndicator(
                                 value: priceRatio,
                                 minHeight: 8,
-                                backgroundColor: theme.colorScheme.surfaceContainerHighest,
-                                valueColor: AlwaysStoppedAnimation<Color>(theme.colorScheme.primary),
+                                backgroundColor: isDarkMode ? const Color(0xFF28303F) : theme.colorScheme.surfaceContainerHighest,
+                                valueColor: const AlwaysStoppedAnimation<Color>(fireOrange),
                               ),
                             ),
                           ),
@@ -168,7 +173,7 @@ class ItemsDetailScreen extends StatelessWidget {
                       ),
                       const SizedBox(height: 10),
 
-                      // Bar 2: Monthly Cost Bar with 8px Amber Goal Target Notch ALWAYS ON TOP
+                      // Bar 2: Monthly Cost Bar with 8px Target Notch ALWAYS ON TOP
                       Row(
                         children: [
                           SizedBox(
@@ -196,7 +201,7 @@ class ItemsDetailScreen extends StatelessWidget {
                                     Container(
                                       height: 8,
                                       decoration: BoxDecoration(
-                                        color: theme.colorScheme.surfaceContainerHighest,
+                                        color: isDarkMode ? const Color(0xFF28303F) : theme.colorScheme.surfaceContainerHighest,
                                         borderRadius: BorderRadius.circular(4),
                                       ),
                                     ),
@@ -208,11 +213,7 @@ class ItemsDetailScreen extends StatelessWidget {
                                         value: usedRatio,
                                         minHeight: 8,
                                         backgroundColor: Colors.transparent,
-                                        valueColor: AlwaysStoppedAnimation<Color>(
-                                          item.isGoalReached
-                                              ? (isDarkMode ? Colors.green.shade400 : Colors.green.shade600)
-                                              : theme.colorScheme.tertiary,
-                                        ),
+                                        valueColor: const AlwaysStoppedAnimation<Color>(fireOrange),
                                       ),
                                     ),
 
@@ -225,8 +226,12 @@ class ItemsDetailScreen extends StatelessWidget {
                                           width: 8,
                                           height: 8,
                                           decoration: BoxDecoration(
-                                            color: isDarkMode ? Colors.amber.shade300 : Colors.amber.shade700,
+                                            color: Colors.white,
                                             borderRadius: BorderRadius.circular(4),
+                                            border: Border.all(
+                                              color: fireOrange,
+                                              width: 1.5,
+                                            ),
                                             boxShadow: const [
                                               BoxShadow(
                                                 color: Colors.black38,
@@ -251,12 +256,10 @@ class ItemsDetailScreen extends StatelessWidget {
                                   ? '${item.usedPricePerMonth.toStringAsFixed(2)} €/mo'
                                   : '${item.goalPricePerMonth.toStringAsFixed(2)} €/mo',
                               textAlign: TextAlign.right,
-                              style: TextStyle(
+                              style: const TextStyle(
                                 fontWeight: FontWeight.bold,
                                 fontSize: 12,
-                                color: item.isGoalReached
-                                    ? (isDarkMode ? Colors.green.shade300 : Colors.green.shade800)
-                                    : theme.colorScheme.primary,
+                                color: fireOrange,
                               ),
                             ),
                           ),
@@ -291,7 +294,7 @@ class WinstreaksDetailScreen extends StatelessWidget {
       appBar: AppBar(
         title: const Row(
           children: [
-            Icon(Icons.local_fire_department, color: Colors.deepOrange),
+            Icon(Icons.local_fire_department, color: fireOrange),
             SizedBox(width: 8),
             Text(
               'Usage Winstreaks',
@@ -401,7 +404,7 @@ class WinstreaksDetailScreen extends StatelessWidget {
                                   fontWeight: FontWeight.bold,
                                   fontSize: 12,
                                   color: item.isGoalReached
-                                      ? (isDarkMode ? Colors.green.shade300 : Colors.green.shade800)
+                                      ? fireOrange
                                       : theme.colorScheme.onSurface,
                                 ),
                               ),
@@ -417,27 +420,23 @@ class WinstreaksDetailScreen extends StatelessWidget {
                                     ? Container(
                                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                         decoration: BoxDecoration(
-                                          color: isDarkMode
-                                              ? Colors.deepOrange.shade900.withValues(alpha: 0.4)
-                                              : Colors.orange.shade100,
+                                          color: fireOrange.withValues(alpha: 0.2),
                                           borderRadius: BorderRadius.circular(16),
-                                          border: Border.all(
-                                            color: isDarkMode ? Colors.deepOrange.shade400 : Colors.orange.shade400,
-                                          ),
+                                          border: Border.all(color: fireOrange.withValues(alpha: 0.6)),
                                         ),
                                         child: Row(
                                           mainAxisSize: MainAxisSize.min,
                                           children: [
-                                            Icon(
+                                            const Icon(
                                               Icons.local_fire_department,
                                               size: 13,
-                                              color: isDarkMode ? Colors.orange.shade300 : Colors.deepOrange,
+                                              color: fireOrange,
                                             ),
                                             const SizedBox(width: 3),
                                             Text(
                                               '${item.usageStreak} mo',
                                               style: TextStyle(
-                                                color: isDarkMode ? Colors.orange.shade200 : Colors.deepOrange.shade900,
+                                                color: isDarkMode ? const Color(0xFFFF9E80) : fireOrange,
                                                 fontWeight: FontWeight.bold,
                                                 fontSize: 11,
                                               ),
@@ -572,7 +571,7 @@ class StatisticsView extends StatelessWidget {
                   children: [
                     Row(
                       children: [
-                        Icon(Icons.stars_rounded, color: theme.colorScheme.primary),
+                        const Icon(Icons.stars_rounded, color: fireOrange),
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
@@ -593,7 +592,7 @@ class StatisticsView extends StatelessWidget {
                           child: _StatusStatBox(
                             title: 'Goals Reached',
                             count: reachedGoals.length,
-                            color: isDarkMode ? Colors.green.shade300 : Colors.green,
+                            color: fireOrange,
                             icon: Icons.check_circle_outline,
                           ),
                         ),
@@ -602,7 +601,7 @@ class StatisticsView extends StatelessWidget {
                           child: _StatusStatBox(
                             title: 'In Progress',
                             count: inProgress.length,
-                            color: isDarkMode ? Colors.orange.shade300 : Colors.orange,
+                            color: isDarkMode ? const Color(0xFF3B485E) : const Color(0xFF64748B),
                             icon: Icons.timelapse,
                           ),
                         ),
@@ -621,10 +620,8 @@ class StatisticsView extends StatelessWidget {
                       child: LinearProgressIndicator(
                         value: items.isNotEmpty ? reachedGoals.length / items.length : 0.0,
                         minHeight: 10,
-                        backgroundColor: theme.colorScheme.surfaceContainerHighest,
-                        valueColor: AlwaysStoppedAnimation<Color>(
-                          isDarkMode ? Colors.green.shade400 : Colors.green,
-                        ),
+                        backgroundColor: isDarkMode ? const Color(0xFF28303F) : theme.colorScheme.surfaceContainerHighest,
+                        valueColor: const AlwaysStoppedAnimation<Color>(fireOrange),
                       ),
                     ),
                   ],
@@ -652,7 +649,7 @@ class StatisticsView extends StatelessWidget {
                     children: [
                       Row(
                         children: [
-                          const Icon(Icons.local_fire_department, color: Colors.deepOrange),
+                          const Icon(Icons.local_fire_department, color: fireOrange),
                           const SizedBox(width: 8),
                           Expanded(
                             child: Text(
@@ -667,15 +664,13 @@ class StatisticsView extends StatelessWidget {
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                             decoration: BoxDecoration(
-                              color: isDarkMode
-                                  ? Colors.deepOrange.shade900.withValues(alpha: 0.4)
-                                  : Colors.orange.shade100,
+                              color: fireOrange.withValues(alpha: isDarkMode ? 0.25 : 0.15),
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: Text(
                               '$activeStreaksCount/${items.length} Active 🔥',
                               style: TextStyle(
-                                color: isDarkMode ? Colors.orange.shade200 : Colors.deepOrange.shade900,
+                                color: isDarkMode ? const Color(0xFFFF9E80) : fireOrange,
                                 fontWeight: FontWeight.bold,
                                 fontSize: 12,
                               ),
@@ -706,17 +701,15 @@ class StatisticsView extends StatelessWidget {
                               child: Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                                 decoration: BoxDecoration(
-                                  color: isDarkMode
-                                      ? Colors.deepOrange.shade900.withValues(alpha: 0.5)
-                                      : Colors.orange.shade100,
+                                  color: fireOrange.withValues(alpha: isDarkMode ? 0.25 : 0.15),
                                   borderRadius: BorderRadius.circular(20),
                                   border: Border.all(
-                                    color: isDarkMode ? Colors.deepOrange.shade400 : Colors.orange.shade400,
+                                    color: fireOrange.withValues(alpha: 0.6),
                                     width: 1.5,
                                   ),
                                   boxShadow: [
                                     BoxShadow(
-                                      color: Colors.deepOrange.withValues(alpha: 0.25),
+                                      color: fireOrange.withValues(alpha: 0.25),
                                       blurRadius: 6,
                                       offset: const Offset(0, 2),
                                     ),
@@ -728,13 +721,13 @@ class StatisticsView extends StatelessWidget {
                                     const Icon(
                                       Icons.local_fire_department,
                                       size: 18,
-                                      color: Colors.deepOrange,
+                                      color: fireOrange,
                                     ),
                                     const SizedBox(width: 4),
                                     Text(
                                       '${item.usageStreak}',
                                       style: TextStyle(
-                                        color: isDarkMode ? Colors.orange.shade200 : Colors.deepOrange.shade900,
+                                        color: isDarkMode ? const Color(0xFFFF9E80) : fireOrange,
                                         fontWeight: FontWeight.w900,
                                         fontSize: 13,
                                       ),
@@ -894,7 +887,7 @@ class StatisticsView extends StatelessWidget {
                           child: LinearProgressIndicator(
                             value: categoryPercentage.clamp(0.0, 1.0),
                             minHeight: 6,
-                            backgroundColor: theme.colorScheme.surfaceContainerHighest,
+                            backgroundColor: isDarkMode ? const Color(0xFF253146) : theme.colorScheme.surfaceContainerHighest,
                             valueColor: AlwaysStoppedAnimation<Color>(catColor),
                           ),
                         ),
@@ -914,7 +907,7 @@ class StatisticsView extends StatelessWidget {
                                 '${categoryUsedRate.toStringAsFixed(2)} € / mo',
                                 style: theme.textTheme.bodySmall?.copyWith(
                                   fontWeight: FontWeight.bold,
-                                  color: theme.colorScheme.primary,
+                                  color: fireOrange,
                                 ),
                               ),
                             ),

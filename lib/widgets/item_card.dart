@@ -1,12 +1,161 @@
 import 'package:flutter/material.dart';
 
 import '../models/item.dart';
+import '../theme/app_theme.dart';
+
+const Color fireOrange = AppColors.fireOrange; // Single unified Fire Orange Accent from AppTheme
+
+/// Color of [gradient] at position [t] (0..1). Assumes evenly spaced stops.
+/// Shared by SteppedProgressBar and the continuous bar.
+Color sampleGradient(Gradient gradient, double t) {
+  final colors = gradient.colors;
+  if (colors.length == 1) return colors.first;
+  final scaled = t.clamp(0.0, 1.0) * (colors.length - 1);
+  final i = scaled.floor().clamp(0, colors.length - 2);
+  return Color.lerp(colors[i], colors[i + 1], scaled - i)!;
+}
+
+/// [ratio] is used / goal and is NOT clamped: 1.0 = goal reached,
+/// 1.25 = a quarter into the second cycle, and so on.
+Widget continuousProgressBar({
+  required double ratio,
+  required Color trackColor,
+  double height = 5,
+  Gradient baseGradient = AppGradients.flameGradient,
+}) {
+  final safeRatio = (ratio.isNaN || ratio < 0) ? 0.0 : ratio;
+
+  // Head position within the bar (0..1). A full cycle puts the head at the end.
+  double head = safeRatio % 1;
+  if (head == 0 && safeRatio > 0) head = 1;
+
+  final goalReached = safeRatio >= 1;
+
+  return ClipRRect(
+    borderRadius: BorderRadius.circular(height * 1.2),
+    child: Container(
+      height: height,
+      color: trackColor,
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final width = constraints.maxWidth;
+          final headWidth = width * head;
+
+          return Row(
+            children: [
+              // Part from the start of the bar up to the head.
+              // At the head t = 1 (orange), going back it fades toward yellow.
+              if (safeRatio > 0)
+                Container(
+                  width: headWidth,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        sampleGradient(baseGradient, 1 - head),
+                        sampleGradient(baseGradient, 1),
+                      ],
+                    ),
+                  ),
+                ),
+
+              // Part after the head, only once the goal has been passed.
+              // It holds the older steps of the previous cycle,
+              // from t = 1 - head down to t = 0, left to right.
+              if (goalReached && head < 1)
+                Container(
+                  width: width - headWidth,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        sampleGradient(baseGradient, 0),
+                        sampleGradient(baseGradient, 1 - head),
+                      ],
+                    ),
+                  ),
+                ),
+            ],
+          );
+        },
+      ),
+    ),
+  );
+}
+class SteppedProgressBar extends StatelessWidget {
+  final int goalMonths;
+  final int usedMonths;
+  final double minHeight;
+  final Gradient baseGradient;
+
+  const SteppedProgressBar({
+    super.key,
+    required this.goalMonths,
+    required this.usedMonths,
+    this.minHeight = 7.0,
+    this.baseGradient = AppGradients.flameGradient,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDarkMode = theme.brightness == Brightness.dark;
+
+    final steps = goalMonths > 0 ? goalMonths : 1;
+    final used = usedMonths < 0 ? 0 : usedMonths;
+    final goalReached = used >= steps;
+
+    // Index of the newest filled step (the head).
+    // Equivalent to the continuous bar's head = ratio % 1 (1 at a full cycle).
+    final headIndex = used == 0 ? -1 : (used - 1) % steps;
+
+    final unfilledColor = isDarkMode
+        ? const Color(0xFF28303F)
+        : theme.colorScheme.surfaceContainerHighest;
+
+    final gap = steps > 16 ? 1.5 : 2.5;
+
+    return Row(
+      children: List.generate(steps, (index) {
+        final isFilled = goalReached || index < used;
+
+        Gradient? gradient;
+        if (isFilled) {
+          // Steps behind the head, wrapping around the bar.
+          final behind = (headIndex - index) % steps;
+
+          // Head ends at t = 1 (orange); each step back moves toward t = 0.
+          final tRight = 1 - behind / steps;
+          final tLeft = 1 - (behind + 1) / steps;
+
+          gradient = LinearGradient(
+            colors: [
+              sampleGradient(baseGradient, tLeft),
+              sampleGradient(baseGradient, tRight),
+            ],
+          );
+        }
+
+        return Expanded(
+          child: Container(
+            margin: EdgeInsets.only(right: index == steps - 1 ? 0 : gap),
+            height: minHeight,
+            decoration: BoxDecoration(
+              color: isFilled ? null : unfilledColor,
+              gradient: gradient,
+              borderRadius: BorderRadius.circular(minHeight / 2),
+            ),
+          ),
+        );
+      }),
+    );
+  }
+}
 
 class ItemCard extends StatelessWidget {
   final Item item;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
   final ValueChanged<MonthlyReviewStatus> onUpdateMonthlyStatus;
+  final bool showSegmentedProgressBar;
 
   const ItemCard({
     super.key,
@@ -14,6 +163,7 @@ class ItemCard extends StatelessWidget {
     required this.onEdit,
     required this.onDelete,
     required this.onUpdateMonthlyStatus,
+    this.showSegmentedProgressBar = true,
   });
 
   @override
@@ -23,32 +173,19 @@ class ItemCard extends StatelessWidget {
     final isGoalReached = item.isGoalReached;
     final monthlyStatus = item.currentMonthlyStatus;
 
-    // Colors for normal vs goal-reached states across Light and Dark themes
-    final cardBgColor = isGoalReached
-        ? (isDarkMode
-            ? Colors.green.shade900.withValues(alpha: 0.3)
-            : Colors.green.shade50)
-        : theme.colorScheme.surface;
-
-    final cardBorderColor = isGoalReached
-        ? (isDarkMode ? Colors.green.shade400 : Colors.green.shade600)
-        : theme.colorScheme.outlineVariant;
-
-    final primaryAccentColor = isGoalReached
-        ? (isDarkMode ? Colors.green.shade300 : Colors.green.shade800)
-        : theme.colorScheme.primary;
-
-    final progressRatio = (item.progressRatio).clamp(0.0, 1.0);
+    // All cards look identical regardless of goal completed or not
+    final cardBgColor = isDarkMode ? const Color(0xFF1C222D) : theme.colorScheme.surface;
+    final cardBorderColor = isDarkMode ? const Color(0xFF2B3342) : theme.colorScheme.outlineVariant;
 
     return Card(
-      elevation: isGoalReached ? 3 : 1,
+      elevation: 2,
       margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
       color: cardBgColor,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
         side: BorderSide(
           color: cardBorderColor,
-          width: isGoalReached ? 2.0 : 1.0,
+          width: 1.2,
         ),
       ),
       child: Padding(
@@ -109,7 +246,7 @@ class ItemCard extends StatelessWidget {
                                 value: MonthlyReviewStatus.used,
                                 child: Row(
                                   children: [
-                                    Icon(Icons.check, color: Colors.teal.shade600, size: 18),
+                                    const Icon(Icons.check, color: fireOrange, size: 18),
                                     const SizedBox(width: 8),
                                     Text(
                                       item.isDefaultUsed ? 'Currently Used (Auto)' : 'Currently Used (+1 mo)',
@@ -126,7 +263,7 @@ class ItemCard extends StatelessWidget {
                                 value: MonthlyReviewStatus.notUsed,
                                 child: Row(
                                   children: [
-                                    Icon(Icons.close, color: Colors.orange.shade700, size: 18),
+                                    const Icon(Icons.close, color: Color(0xFF64748B), size: 18),
                                     const SizedBox(width: 8),
                                     Text(
                                       'Not Used',
@@ -162,21 +299,13 @@ class ItemCard extends StatelessWidget {
                               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                               decoration: BoxDecoration(
                                 color: monthlyStatus == MonthlyReviewStatus.used
-                                    ? (isDarkMode
-                                        ? Colors.teal.shade900.withValues(alpha: 0.5)
-                                        : Colors.teal.shade100)
-                                    : monthlyStatus == MonthlyReviewStatus.notUsed
-                                        ? (isDarkMode
-                                            ? Colors.orange.shade900.withValues(alpha: 0.5)
-                                            : Colors.orange.shade100)
-                                        : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+                                    ? (isDarkMode ? Colors.white.withValues(alpha: 0.18) : Colors.black87)
+                                    : (isDarkMode ? const Color(0xFF252E3E) : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5)),
                                 borderRadius: BorderRadius.circular(20),
                                 border: Border.all(
                                   color: monthlyStatus == MonthlyReviewStatus.used
-                                      ? Colors.teal.shade400
-                                      : monthlyStatus == MonthlyReviewStatus.notUsed
-                                          ? (isDarkMode ? Colors.orange.shade400 : Colors.orange.shade300)
-                                          : theme.colorScheme.outlineVariant,
+                                      ? (isDarkMode ? Colors.white38 : Colors.black26)
+                                      : theme.colorScheme.outlineVariant,
                                 ),
                               ),
                               child: Row(
@@ -190,10 +319,8 @@ class ItemCard extends StatelessWidget {
                                             : Icons.help_outline,
                                     size: 13,
                                     color: monthlyStatus == MonthlyReviewStatus.used
-                                        ? (isDarkMode ? Colors.teal.shade200 : Colors.teal.shade800)
-                                        : monthlyStatus == MonthlyReviewStatus.notUsed
-                                            ? (isDarkMode ? Colors.orange.shade200 : Colors.orange.shade900)
-                                            : theme.colorScheme.outline,
+                                        ? Colors.white
+                                        : theme.colorScheme.outline,
                                   ),
                                   const SizedBox(width: 4),
                                   Text(
@@ -204,10 +331,8 @@ class ItemCard extends StatelessWidget {
                                             : 'Needs review',
                                     style: TextStyle(
                                       color: monthlyStatus == MonthlyReviewStatus.used
-                                          ? (isDarkMode ? Colors.teal.shade200 : Colors.teal.shade900)
-                                          : monthlyStatus == MonthlyReviewStatus.notUsed
-                                              ? (isDarkMode ? Colors.orange.shade200 : Colors.orange.shade900)
-                                              : theme.colorScheme.onSurfaceVariant,
+                                          ? Colors.white
+                                          : theme.colorScheme.onSurfaceVariant,
                                       fontWeight: FontWeight.bold,
                                       fontSize: 11,
                                     ),
@@ -217,10 +342,8 @@ class ItemCard extends StatelessWidget {
                                     Icons.arrow_drop_down,
                                     size: 16,
                                     color: monthlyStatus == MonthlyReviewStatus.used
-                                        ? (isDarkMode ? Colors.teal.shade200 : Colors.teal.shade800)
-                                        : monthlyStatus == MonthlyReviewStatus.notUsed
-                                            ? (isDarkMode ? Colors.orange.shade200 : Colors.orange.shade900)
-                                            : theme.colorScheme.outline,
+                                        ? Colors.white
+                                        : theme.colorScheme.outline,
                                   ),
                                 ],
                               ),
@@ -234,27 +357,23 @@ class ItemCard extends StatelessWidget {
                               child: Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                 decoration: BoxDecoration(
-                                  color: isDarkMode
-                                      ? Colors.deepOrange.shade900.withValues(alpha: 0.4)
-                                      : Colors.orange.shade100,
+                                  color: fireOrange.withValues(alpha: 0.2),
                                   borderRadius: BorderRadius.circular(20),
-                                  border: Border.all(
-                                    color: isDarkMode ? Colors.deepOrange.shade400 : Colors.orange.shade400,
-                                  ),
+                                  border: Border.all(color: fireOrange.withValues(alpha: 0.6)),
                                 ),
                                 child: Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
-                                    Icon(
+                                    const Icon(
                                       Icons.local_fire_department,
                                       size: 14,
-                                      color: isDarkMode ? Colors.orange.shade300 : Colors.deepOrange,
+                                      color: fireOrange,
                                     ),
                                     const SizedBox(width: 3),
                                     Text(
                                       '${item.usageStreak}',
                                       style: TextStyle(
-                                        color: isDarkMode ? Colors.orange.shade200 : Colors.deepOrange.shade900,
+                                        color: isDarkMode ? const Color(0xFFFF9E80) : fireOrange,
                                         fontWeight: FontWeight.bold,
                                         fontSize: 11,
                                       ),
@@ -269,20 +388,20 @@ class ItemCard extends StatelessWidget {
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                               decoration: BoxDecoration(
-                                color: isDarkMode ? Colors.green.shade700 : Colors.green.shade600,
+                                gradient: AppGradients.orangeGradient,
                                 borderRadius: BorderRadius.circular(20),
                               ),
                               child: const Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  Icon(Icons.check_circle, size: 13, color: Colors.white),
+                                  Icon(Icons.stars, size: 13, color: Colors.white),
                                   SizedBox(width: 4),
                                   Text(
                                     'Goal Reached',
                                     style: TextStyle(
-                                      color: Colors.white,
                                       fontWeight: FontWeight.bold,
                                       fontSize: 11,
+                                      color: Colors.white,
                                     ),
                                   ),
                                 ],
@@ -319,9 +438,9 @@ class ItemCard extends StatelessWidget {
                           value: 'delete',
                           child: Row(
                             children: [
-                              Icon(Icons.delete_outline, size: 18, color: Colors.red),
+                              Icon(Icons.delete_outline, size: 18, color: Color(0xFF64748B)),
                               SizedBox(width: 8),
-                              Text('Delete', style: TextStyle(color: Colors.red)),
+                              Text('Delete', style: TextStyle(color: Color(0xFF64748B))),
                             ],
                           ),
                         ),
@@ -343,9 +462,6 @@ class ItemCard extends StatelessWidget {
                         style: theme.textTheme.titleLarge?.copyWith(
                           fontWeight: FontWeight.bold,
                           fontSize: 17,
-                          color: isGoalReached
-                              ? (isDarkMode ? Colors.green.shade200 : Colors.green.shade900)
-                              : null,
                         ),
                       ),
                     ),
@@ -357,7 +473,7 @@ class ItemCard extends StatelessWidget {
                         style: theme.textTheme.titleLarge?.copyWith(
                           fontWeight: FontWeight.w800,
                           fontSize: 17,
-                          color: primaryAccentColor,
+                          color: theme.colorScheme.onSurface,
                         ),
                       ),
                     ),
@@ -369,12 +485,11 @@ class ItemCard extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                   decoration: BoxDecoration(
-                    color: isGoalReached
-                        ? (isDarkMode
-                            ? Colors.black.withValues(alpha: 0.3)
-                            : Colors.white.withValues(alpha: 0.7))
-                        : theme.colorScheme.surfaceContainerLowest,
+                    color: isDarkMode ? const Color(0xFF242C3B) : theme.colorScheme.surfaceContainerLowest,
                     borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: isDarkMode ? const Color(0xFF2E384A) : theme.colorScheme.outlineVariant,
+                    ),
                   ),
                   child: Row(
                     children: [
@@ -408,7 +523,7 @@ class ItemCard extends StatelessWidget {
                                 style: theme.textTheme.titleMedium?.copyWith(
                                   fontWeight: FontWeight.bold,
                                   fontSize: 14,
-                                  color: theme.colorScheme.primary,
+                                  color: theme.colorScheme.onSurface,
                                 ),
                               ),
                             ),
@@ -428,12 +543,10 @@ class ItemCard extends StatelessWidget {
                           children: [
                             Row(
                               children: [
-                                Icon(
+                                const Icon(
                                   Icons.history,
                                   size: 15,
-                                  color: isGoalReached
-                                      ? (isDarkMode ? Colors.green.shade300 : Colors.green.shade700)
-                                      : Colors.grey,
+                                  color: Colors.grey,
                                 ),
                                 const SizedBox(width: 4),
                                 Expanded(
@@ -442,10 +555,7 @@ class ItemCard extends StatelessWidget {
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
                                     style: theme.textTheme.bodySmall?.copyWith(
-                                      color: isGoalReached
-                                          ? (isDarkMode ? Colors.green.shade300 : Colors.green.shade800)
-                                          : (isDarkMode ? Colors.grey.shade400 : Colors.grey.shade700),
-                                      fontWeight: isGoalReached ? FontWeight.bold : null,
+                                      color: isDarkMode ? Colors.grey.shade400 : Colors.grey.shade700,
                                     ),
                                   ),
                                 ),
@@ -462,9 +572,7 @@ class ItemCard extends StatelessWidget {
                                 style: theme.textTheme.titleMedium?.copyWith(
                                   fontWeight: FontWeight.bold,
                                   fontSize: 14,
-                                  color: isGoalReached
-                                      ? (isDarkMode ? Colors.green.shade300 : Colors.green.shade800)
-                                      : theme.colorScheme.onSurface,
+                                  color: fireOrange,
                                 ),
                               ),
                             ),
@@ -496,31 +604,27 @@ class ItemCard extends StatelessWidget {
                       '${item.usedDurationMonths} / ${item.goalDurationMonths} months',
                       style: theme.textTheme.bodySmall?.copyWith(
                         fontWeight: FontWeight.bold,
-                        color: isGoalReached
-                            ? (isDarkMode ? Colors.green.shade300 : Colors.green.shade800)
-                            : null,
+                        color: isGoalReached ? fireOrange : null,
                       ),
                     ),
                   ],
                 ),
                 const SizedBox(height: 6),
 
-                // Progress Bar (Pill shape, anchored to the bottom of the card)
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(8),
-                  child: LinearProgressIndicator(
-                    value: progressRatio,
-                    minHeight: 7,
-                    backgroundColor: isGoalReached
-                        ? (isDarkMode ? Colors.green.shade900.withValues(alpha: 0.5) : Colors.green.shade100)
-                        : theme.colorScheme.surfaceContainerHighest,
-                    valueColor: AlwaysStoppedAnimation<Color>(
-                      isGoalReached
-                          ? (isDarkMode ? Colors.green.shade400 : Colors.green.shade600)
-                          : theme.colorScheme.primary,
-                    ),
-                  ),
-                ),
+                // Progress Bar (Stepped Segmented vs Continuous Linear)
+                showSegmentedProgressBar
+                    ? SteppedProgressBar(
+                        goalMonths: item.goalDurationMonths,
+                        usedMonths: item.usedDurationMonths,
+                        minHeight: 7,
+                      )
+                    : continuousProgressBar(
+                        ratio: item.progressRatio, // don't clamp it anymore
+                        trackColor: isDarkMode
+                            ? const Color(0xFF28303F)
+                            : theme.colorScheme.surfaceContainerHighest,
+                        height: 7,
+                      ),
               ],
             ),
           ],
@@ -535,6 +639,7 @@ class CompactItemCard extends StatelessWidget {
   final VoidCallback onEdit;
   final VoidCallback onDelete;
   final ValueChanged<MonthlyReviewStatus> onUpdateMonthlyStatus;
+  final bool showSegmentedProgressBar;
 
   const CompactItemCard({
     super.key,
@@ -542,36 +647,27 @@ class CompactItemCard extends StatelessWidget {
     required this.onEdit,
     required this.onDelete,
     required this.onUpdateMonthlyStatus,
+    this.showSegmentedProgressBar = true,
   });
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDarkMode = theme.brightness == Brightness.dark;
-    final isGoalReached = item.isGoalReached;
     final monthlyStatus = item.currentMonthlyStatus;
 
-    final cardBgColor = isGoalReached
-        ? (isDarkMode
-            ? Colors.green.shade900.withValues(alpha: 0.25)
-            : Colors.green.shade50)
-        : theme.colorScheme.surface;
-
-    final cardBorderColor = isGoalReached
-        ? (isDarkMode ? Colors.green.shade400 : Colors.green.shade600)
-        : theme.colorScheme.outlineVariant;
-
-    final progressRatio = (item.progressRatio).clamp(0.0, 1.0);
+    final cardBgColor = isDarkMode ? const Color(0xFF1C222D) : theme.colorScheme.surface;
+    final cardBorderColor = isDarkMode ? const Color(0xFF2B3342) : theme.colorScheme.outlineVariant;
 
     return Card(
-      elevation: isGoalReached ? 2 : 0.5,
+      elevation: 2,
       margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
       color: cardBgColor,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
         side: BorderSide(
           color: cardBorderColor,
-          width: isGoalReached ? 1.5 : 1.0,
+          width: 1.2,
         ),
       ),
       child: Padding(
@@ -610,7 +706,7 @@ class CompactItemCard extends StatelessWidget {
                       value: MonthlyReviewStatus.used,
                       child: Row(
                         children: [
-                          Icon(Icons.check, color: Colors.teal.shade600, size: 18),
+                          const Icon(Icons.check, color: fireOrange, size: 18),
                           const SizedBox(width: 8),
                           Text(item.isDefaultUsed ? 'Currently Used (Auto)' : 'Currently Used (+1 mo)'),
                         ],
@@ -620,7 +716,7 @@ class CompactItemCard extends StatelessWidget {
                       value: MonthlyReviewStatus.notUsed,
                       child: Row(
                         children: [
-                          Icon(Icons.close, color: Colors.orange.shade700, size: 18),
+                          const Icon(Icons.close, color: Color(0xFF64748B), size: 18),
                           const SizedBox(width: 8),
                           const Text('Not Used'),
                         ],
@@ -642,17 +738,13 @@ class CompactItemCard extends StatelessWidget {
                     padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
                     decoration: BoxDecoration(
                       color: monthlyStatus == MonthlyReviewStatus.used
-                          ? (isDarkMode ? Colors.teal.shade900.withValues(alpha: 0.5) : Colors.teal.shade100)
-                          : monthlyStatus == MonthlyReviewStatus.notUsed
-                              ? (isDarkMode ? Colors.orange.shade900.withValues(alpha: 0.5) : Colors.orange.shade100)
-                              : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+                          ? (isDarkMode ? Colors.white.withValues(alpha: 0.18) : Colors.black87)
+                          : (isDarkMode ? const Color(0xFF252E3E) : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5)),
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(
                         color: monthlyStatus == MonthlyReviewStatus.used
-                            ? Colors.teal.shade400
-                            : monthlyStatus == MonthlyReviewStatus.notUsed
-                                ? (isDarkMode ? Colors.orange.shade400 : Colors.orange.shade300)
-                                : theme.colorScheme.outlineVariant,
+                            ? (isDarkMode ? Colors.white38 : Colors.black26)
+                            : theme.colorScheme.outlineVariant,
                       ),
                     ),
                     child: Row(
@@ -666,15 +758,15 @@ class CompactItemCard extends StatelessWidget {
                                   : Icons.help_outline,
                           size: 13,
                           color: monthlyStatus == MonthlyReviewStatus.used
-                              ? (isDarkMode ? Colors.teal.shade200 : Colors.teal.shade800)
-                              : monthlyStatus == MonthlyReviewStatus.notUsed
-                                  ? (isDarkMode ? Colors.orange.shade200 : Colors.orange.shade900)
-                                  : theme.colorScheme.outline,
+                              ? Colors.white
+                              : theme.colorScheme.outline,
                         ),
                         Icon(
                           Icons.arrow_drop_down,
                           size: 14,
-                          color: theme.colorScheme.outline,
+                          color: monthlyStatus == MonthlyReviewStatus.used
+                              ? Colors.white
+                              : theme.colorScheme.outline,
                         ),
                       ],
                     ),
@@ -689,27 +781,23 @@ class CompactItemCard extends StatelessWidget {
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
                       decoration: BoxDecoration(
-                        color: isDarkMode
-                            ? Colors.deepOrange.shade900.withValues(alpha: 0.4)
-                            : Colors.orange.shade100,
+                        color: fireOrange.withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(16),
-                        border: Border.all(
-                          color: isDarkMode ? Colors.deepOrange.shade400 : Colors.orange.shade400,
-                        ),
+                        border: Border.all(color: fireOrange.withValues(alpha: 0.6)),
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(
+                          const Icon(
                             Icons.local_fire_department,
                             size: 13,
-                            color: isDarkMode ? Colors.orange.shade300 : Colors.deepOrange,
+                            color: fireOrange,
                           ),
                           const SizedBox(width: 2),
                           Text(
                             '${item.usageStreak}',
                             style: TextStyle(
-                              color: isDarkMode ? Colors.orange.shade200 : Colors.deepOrange.shade900,
+                              color: isDarkMode ? const Color(0xFFFF9E80) : fireOrange,
                               fontWeight: FontWeight.bold,
                               fontSize: 11,
                             ),
@@ -729,9 +817,6 @@ class CompactItemCard extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                     style: theme.textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.bold,
-                      color: isGoalReached
-                          ? (isDarkMode ? Colors.green.shade200 : Colors.green.shade900)
-                          : null,
                     ),
                   ),
                 ),
@@ -744,9 +829,7 @@ class CompactItemCard extends StatelessWidget {
                     '${item.price.toStringAsFixed(2)} €',
                     style: theme.textTheme.titleSmall?.copyWith(
                       fontWeight: FontWeight.bold,
-                      color: isGoalReached
-                          ? (isDarkMode ? Colors.green.shade300 : Colors.green.shade800)
-                          : theme.colorScheme.primary,
+                      color: fireOrange,
                     ),
                   ),
                 ),
@@ -778,9 +861,9 @@ class CompactItemCard extends StatelessWidget {
                       value: 'delete',
                       child: Row(
                         children: [
-                          Icon(Icons.delete_outline, size: 18, color: Colors.red),
+                          Icon(Icons.delete_outline, size: 18, color: Color(0xFF64748B)),
                           SizedBox(width: 8),
-                          Text('Delete', style: TextStyle(color: Colors.red)),
+                          Text('Delete', style: TextStyle(color: Color(0xFF64748B))),
                         ],
                       ),
                     ),
@@ -789,12 +872,11 @@ class CompactItemCard extends StatelessWidget {
               ],
             ),
 
-            // Bottom Anchored Group (Used Rate & Month Numbers + Progress Bar)
+            // Bottom Anchored Group (Used Rate & Month Numbers + Stepped Progress Bar)
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: [
-                const SizedBox(height: 0), //no padding needed between title and progress bar
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -805,41 +887,34 @@ class CompactItemCard extends StatelessWidget {
                           : 'N/A',
                       style: theme.textTheme.bodySmall?.copyWith(
                         fontWeight: FontWeight.bold,
-                        color: isGoalReached
-                            ? (isDarkMode ? Colors.green.shade300 : Colors.green.shade800)
-                            : theme.colorScheme.primary,
+                        color: fireOrange,
                       ),
                     ),
-
                     // Month Numbers
                     Text(
                       '${item.usedDurationMonths}/${item.goalDurationMonths} mo',
                       style: theme.textTheme.bodySmall?.copyWith(
                         fontWeight: FontWeight.bold,
-                        color: isGoalReached
-                            ? (isDarkMode ? Colors.green.shade300 : Colors.green.shade800)
-                            : (isDarkMode ? Colors.grey.shade400 : Colors.grey.shade700),
+                        color: isDarkMode ? Colors.grey.shade400 : Colors.grey.shade700,
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 6), //padding between text and bar
+                const SizedBox(height: 6),
 
-                // Progress Bar
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(6),
-                  child: LinearProgressIndicator(
-                    value: progressRatio,
-                    minHeight: 5,
-                    backgroundColor: isGoalReached
-                        ? (isDarkMode ? Colors.green.shade900.withValues(alpha: 0.5) : Colors.green.shade100)
-                        : theme.colorScheme.surfaceContainerHighest,
-                    valueColor: AlwaysStoppedAnimation<Color>(
-                      isGoalReached
-                          ? (isDarkMode ? Colors.green.shade400 : Colors.green.shade600)
-                          : theme.colorScheme.primary,
-                    ),
-                  ),
+                // Progress Bar (Stepped Segmented vs Continuous Linear)
+                showSegmentedProgressBar
+                    ? SteppedProgressBar(
+                  goalMonths: item.goalDurationMonths,
+                  usedMonths: item.usedDurationMonths,
+                  minHeight: 5,
+                )
+                    : continuousProgressBar(
+                  ratio: item.progressRatio, // don't clamp it anymore
+                  trackColor: isDarkMode
+                      ? const Color(0xFF28303F)
+                      : theme.colorScheme.surfaceContainerHighest,
+                  height: 5,
                 ),
               ],
             ),

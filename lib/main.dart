@@ -2,10 +2,12 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 
 import 'models/item.dart';
+import 'theme/app_theme.dart';
 import 'widgets/category_manager_dialog.dart';
 import 'widgets/item_dialog.dart';
 import 'widgets/items_view.dart';
 import 'widgets/review_view.dart';
+import 'widgets/settings_screen.dart';
 import 'widgets/statistics_view.dart';
 
 void main() {
@@ -30,16 +32,33 @@ class _BrazierAppState extends State<BrazierApp> {
 
   @override
   Widget build(BuildContext context) {
-    final seedColor = const Color(0xFF5C6BC0);
-
-    final lightColorScheme = ColorScheme.fromSeed(
-      seedColor: seedColor,
-      brightness: Brightness.light,
+    final darkColorScheme = ColorScheme.fromSeed(
+      seedColor: AppColors.primaryOrange,
+      brightness: Brightness.dark,
+    ).copyWith(
+      primary: AppColors.primaryOrange,
+      onPrimary: Colors.white,
+      secondary: AppColors.primaryOrange,
+      tertiary: AppColors.primaryOrange,
+      surface: AppColors.scaffoldBackground,
+      surfaceContainerLow: AppColors.cardBackground,
+      surfaceContainerLowest: AppColors.scaffoldBackground,
+      surfaceContainerHighest: AppColors.containerBackground,
+      onSurface: const Color(0xFFE2E8F0),
+      outline: const Color(0xFF3B4454),
+      outlineVariant: AppColors.cardBorder,
     );
 
-    final darkColorScheme = ColorScheme.fromSeed(
-      seedColor: seedColor,
-      brightness: Brightness.dark,
+    final lightColorScheme = ColorScheme.fromSeed(
+      seedColor: AppColors.primaryOrange,
+      brightness: Brightness.light,
+    ).copyWith(
+      primary: AppColors.primaryOrange,
+      secondary: AppColors.primaryOrange,
+      tertiary: AppColors.primaryOrange,
+      surface: const Color(0xFFF1F4F9),
+      surfaceContainerLow: const Color(0xFFE2E8F0),
+      surfaceContainerHighest: const Color(0xFFCBD5E1),
     );
 
     return MaterialApp(
@@ -95,6 +114,9 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   int _currentTabIndex = 0;
 
+  // Display preferences
+  bool _showSegmentedProgressBar = true;
+
   // Dynamic Categories list initialized with defaults
   late List<Category> _categories;
 
@@ -119,7 +141,7 @@ class _HomeScreenState extends State<HomeScreen> {
         goalDurationMonths: 24,
         usedDurationMonths: 26,
         isDefaultUsed: true,
-        usageStreak: 0,
+        usageStreak: 26,
       ),
       Item(
         id: '2',
@@ -128,7 +150,7 @@ class _HomeScreenState extends State<HomeScreen> {
         category: clothesCat,
         goalDurationMonths: 6,
         usedDurationMonths: 4,
-        usageStreak: 0,
+        usageStreak: 4,
       ),
       Item(
         id: '3',
@@ -137,8 +159,7 @@ class _HomeScreenState extends State<HomeScreen> {
         category: devicesCat,
         goalDurationMonths: 12,
         usedDurationMonths: 12,
-        usageStreak: 0,
-
+        usageStreak: 12,
       ),
       Item(
         id: '4',
@@ -147,7 +168,7 @@ class _HomeScreenState extends State<HomeScreen> {
         category: fitnessCat,
         goalDurationMonths: 5,
         usedDurationMonths: 2,
-        usageStreak: 0,
+        usageStreak: 2,
       ),
     ];
   }
@@ -170,6 +191,29 @@ class _HomeScreenState extends State<HomeScreen> {
 
   int get _pendingReviewCount {
     return _items.where((i) => i.currentMonthlyStatus == MonthlyReviewStatus.pending).length;
+  }
+
+  void _reorderItems(int oldFilteredIndex, int newFilteredIndex) {
+    setState(() {
+      final filteredList = _filteredItems;
+      if (oldFilteredIndex < 0 || oldFilteredIndex >= filteredList.length) return;
+
+      final movedItem = filteredList[oldFilteredIndex];
+      final oldRealIndex = _items.indexOf(movedItem);
+
+      if (newFilteredIndex > oldFilteredIndex) {
+        newFilteredIndex -= 1;
+      }
+
+      if (newFilteredIndex < 0 || newFilteredIndex >= filteredList.length) return;
+      final targetItem = filteredList[newFilteredIndex];
+      final newRealIndex = _items.indexOf(targetItem);
+
+      if (oldRealIndex != -1 && newRealIndex != -1) {
+        _items.removeAt(oldRealIndex);
+        _items.insert(newRealIndex, movedItem);
+      }
+    });
   }
 
   void _addCategory(Category cat) {
@@ -229,6 +273,24 @@ class _HomeScreenState extends State<HomeScreen> {
         onAddCategory: _addCategory,
         onUpdateCategory: _updateCategory,
         onDeleteCategory: _deleteCategory,
+      ),
+    );
+  }
+
+  void _openSettings() {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => SettingsScreen(
+          themeMode: widget.themeMode,
+          onThemeModeChanged: widget.onThemeModeChanged,
+          showSegmentedProgressBar: _showSegmentedProgressBar,
+          onSegmentedProgressBarChanged: (value) {
+            setState(() {
+              _showSegmentedProgressBar = value;
+            });
+          },
+          onManageCategories: _openCategoryManager,
+        ),
       ),
     );
   }
@@ -401,17 +463,6 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  IconData get _themeIcon {
-    switch (widget.themeMode) {
-      case ThemeMode.light:
-        return Icons.light_mode;
-      case ThemeMode.dark:
-        return Icons.dark_mode;
-      case ThemeMode.system:
-        return Icons.brightness_auto;
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -431,7 +482,7 @@ class _HomeScreenState extends State<HomeScreen> {
               height: 28,
               width: 28,
               errorBuilder: (context, error, stackTrace) =>
-                  const Icon(Icons.local_fire_department, color: Colors.orangeAccent),
+                  const Icon(Icons.local_fire_department, color: AppColors.primaryOrange),
             ),
             const SizedBox(width: 8),
             Expanded(
@@ -448,85 +499,11 @@ class _HomeScreenState extends State<HomeScreen> {
           ],
         ),
         actions: [
-          if (_currentTabIndex == 0)
-            IconButton(
-              icon: const Icon(Icons.category_outlined),
-              tooltip: 'Manage Categories',
-              onPressed: _openCategoryManager,
-            ),
-          // Theme Switcher Menu
-          PopupMenuButton<ThemeMode>(
-            icon: Icon(_themeIcon),
-            tooltip: 'Appearance Theme',
-            onSelected: widget.onThemeModeChanged,
-            itemBuilder: (context) => [
-              PopupMenuItem(
-                value: ThemeMode.system,
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.brightness_auto,
-                      color: widget.themeMode == ThemeMode.system
-                          ? theme.colorScheme.primary
-                          : null,
-                    ),
-                    const SizedBox(width: 12),
-                    Text(
-                      'System Default',
-                      style: TextStyle(
-                        fontWeight: widget.themeMode == ThemeMode.system
-                            ? FontWeight.bold
-                            : FontWeight.normal,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              PopupMenuItem(
-                value: ThemeMode.light,
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.light_mode,
-                      color: widget.themeMode == ThemeMode.light
-                          ? theme.colorScheme.primary
-                          : null,
-                    ),
-                    const SizedBox(width: 12),
-                    Text(
-                      'Light Theme',
-                      style: TextStyle(
-                        fontWeight: widget.themeMode == ThemeMode.light
-                            ? FontWeight.bold
-                            : FontWeight.normal,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              PopupMenuItem(
-                value: ThemeMode.dark,
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.dark_mode,
-                      color: widget.themeMode == ThemeMode.dark
-                          ? theme.colorScheme.primary
-                          : null,
-                    ),
-                    const SizedBox(width: 12),
-                    Text(
-                      'Dark Theme',
-                      style: TextStyle(
-                        fontWeight: widget.themeMode == ThemeMode.dark
-                            ? FontWeight.bold
-                            : FontWeight.normal,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
+          // Gear Settings Button
+          IconButton(
+            icon: const Icon(Icons.settings_outlined),
+            tooltip: 'Settings',
+            onPressed: _openSettings,
           ),
           if (_currentTabIndex == 0)
             IconButton(
@@ -547,6 +524,7 @@ class _HomeScreenState extends State<HomeScreen> {
               searchQuery: _searchQuery,
               selectedCategoryFilter: _selectedCategoryFilter,
               showOnlyGoalReached: _showOnlyGoalReached,
+              showSegmentedProgressBar: _showSegmentedProgressBar,
               onSearchQueryChanged: (query) {
                 setState(() {
                   _searchQuery = query;
@@ -565,6 +543,7 @@ class _HomeScreenState extends State<HomeScreen> {
               onEditItem: _openEditDialog,
               onDeleteItem: _deleteItem,
               onUpdateMonthlyStatus: _updateMonthlyStatus,
+              onReorderItems: _reorderItems,
             ),
 
             // TAB 1: Monthly Review View

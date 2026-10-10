@@ -3,6 +3,9 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 
 import '../models/item.dart';
+import '../theme/app_theme.dart';
+
+const Color fireOrange = AppColors.fireOrange; // Single unified Fire Orange Accent from AppTheme
 
 class ReviewView extends StatefulWidget {
   final List<Item> items;
@@ -64,6 +67,8 @@ class _ReviewViewState extends State<ReviewView> {
     final isDarkMode = theme.brightness == Brightness.dark;
     final pending = _pendingItems;
 
+    const darkSlateBlue = Color(0xFF252D3C);
+
     if (pending.isEmpty) {
       return Center(
         child: SingleChildScrollView(
@@ -74,15 +79,13 @@ class _ReviewViewState extends State<ReviewView> {
               Container(
                 padding: const EdgeInsets.all(24),
                 decoration: BoxDecoration(
-                  color: isDarkMode
-                      ? Colors.green.shade900.withValues(alpha: 0.3)
-                      : Colors.green.shade50,
+                  color: fireOrange.withValues(alpha: isDarkMode ? 0.2 : 0.1),
                   shape: BoxShape.circle,
                 ),
-                child: Icon(
-                  Icons.verified_outlined,
+                child: const Icon(
+                  Icons.local_fire_department,
                   size: 64,
-                  color: isDarkMode ? Colors.green.shade300 : Colors.green.shade600,
+                  color: fireOrange,
                 ),
               ),
               const SizedBox(height: 20),
@@ -150,13 +153,13 @@ class _ReviewViewState extends State<ReviewView> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
-                  color: theme.colorScheme.primaryContainer,
+                  color: fireOrange.withValues(alpha: isDarkMode ? 0.25 : 0.15),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
                   '${_currentIndex + 1} of ${pending.length} left',
-                  style: TextStyle(
-                    color: theme.colorScheme.onPrimaryContainer,
+                  style: const TextStyle(
+                    color: fireOrange,
                     fontWeight: FontWeight.bold,
                     fontSize: 12,
                   ),
@@ -210,145 +213,135 @@ class _ReviewViewState extends State<ReviewView> {
 
                   // Top Interactive Swipable Card
                   Listener(
-                  onPointerSignal: (pointerSignal) {
-                    if (pointerSignal is PointerScrollEvent) {
-                      final dx = pointerSignal.scrollDelta.dx;
-                      final dy = pointerSignal.scrollDelta.dy;
+                    onPointerSignal: (pointerSignal) {
+                      if (pointerSignal is PointerScrollEvent) {
+                        final dx = pointerSignal.scrollDelta.dx;
+                        final dy = pointerSignal.scrollDelta.dy;
 
-                      if (dx > 30) {
-                        _handleReview(currentItem, true);
-                      } else if (dx < -30) {
-                        _handleReview(currentItem, false);
-                      } else if (dy > 30) {
-                        _nextItem();
-                      } else if (dy < -30) {
-                        //_previousItem();
-                        _nextItem();
+                        if (dx > 30) {
+                          _handleReview(currentItem, true);
+                        } else if (dx < -30) {
+                          _handleReview(currentItem, false);
+                        } else if (dy > 30 || dy < -30) {
+                          _nextItem();
+                        }
                       }
-                    }
-                  },
-                  child: GestureDetector(
-                    onPanUpdate: (details) {
-                      setState(() {
-                        _dragOffset += details.delta;
-                      });
                     },
-                    onPanEnd: (_) {
-                      final dx = _dragOffset.dx;
-                      final dy = _dragOffset.dy;
-
-                      if (dx > screenWidth * 0.25) {
-                        // Swiped Right -> Used!
-                        _handleReview(currentItem, true);
-                      } else if (dx < -screenWidth * 0.25) {
-                        // Swiped Left -> Not Used!
-                        _handleReview(currentItem, false);
-                      } else if (dy < -80) {
-                        // Swiped Up -> Next item
-                        _nextItem();
-                      } else if (dy > 80) {
-                        // Swiped Down -> Also  next item
-                        _nextItem();
-                      } else {
-                        // Reset card position
+                    child: GestureDetector(
+                      onPanUpdate: (details) {
                         setState(() {
-                          _dragOffset = Offset.zero;
+                          _dragOffset += details.delta;
                         });
-                      }
-                    },
-                    child: Transform.translate(
-                      offset: _dragOffset,
-                      child: Transform.rotate(
-                        angle: (_dragOffset.dx / screenWidth) * (pi / 8),
-                        child: Stack(
-                          fit: StackFit.expand,
-                          children: [
-                            _ReviewCardContent(item: currentItem),
+                      },
+                      onPanEnd: (_) {
+                        final dx = _dragOffset.dx;
+                        final dy = _dragOffset.dy;
 
-                            // "USED" Stamp Overlay when dragging right
-                            if (isSwipingRight)
-                              Positioned(
-                                top: 30,
-                                left: 20,
-                                child: Transform.rotate(
-                                  angle: -pi / 12,
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-                                    decoration: BoxDecoration(
-                                      border: Border.all(color: Colors.green, width: 3.5),
-                                      borderRadius: BorderRadius.circular(12),
-                                      color: Colors.green.withValues(alpha: 0.2),
-                                    ),
-                                    child: const Text(
-                                      'USED (+1 mo)',
-                                      style: TextStyle(
-                                        color: Colors.green,
-                                        fontWeight: FontWeight.w900,
-                                        fontSize: 20,
-                                        letterSpacing: 1.2,
+                        if (dx > screenWidth * 0.25) {
+                          // Swiped Right -> Used!
+                          _handleReview(currentItem, true);
+                        } else if (dx < -screenWidth * 0.25) {
+                          // Swiped Left -> Not Used!
+                          _handleReview(currentItem, false);
+                        } else if (dy < -80 || dy > 80) {
+                          // Swiped Up/Down -> Next item
+                          _nextItem();
+                        } else {
+                          // Reset card position
+                          setState(() {
+                            _dragOffset = Offset.zero;
+                          });
+                        }
+                      },
+                      child: Transform.translate(
+                        offset: _dragOffset,
+                        child: Transform.rotate(
+                          angle: (_dragOffset.dx / screenWidth) * (pi / 8),
+                          child: Stack(
+                            fit: StackFit.expand,
+                            children: [
+                              _ReviewCardContent(item: currentItem),
+
+                              // "USED" Stamp Overlay when dragging right (Single Fire Orange)
+                              if (isSwipingRight)
+                                Positioned(
+                                  top: 30,
+                                  left: 20,
+                                  child: Transform.rotate(
+                                    angle: -pi / 12,
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                                      decoration: BoxDecoration(
+                                        border: Border.all(color: fireOrange, width: 3.5),
+                                        borderRadius: BorderRadius.circular(12),
+                                        color: fireOrange.withValues(alpha: 0.2),
+                                      ),
+                                      child: const Text(
+                                        'USED (+1 mo)',
+                                        style: TextStyle(
+                                          color: fireOrange,
+                                          fontWeight: FontWeight.w900,
+                                          fontSize: 20,
+                                          letterSpacing: 1.2,
+                                        ),
                                       ),
                                     ),
                                   ),
                                 ),
-                              ),
 
-                            // "NOT USED" Stamp Overlay when dragging left
-                            if (isSwipingLeft)
-                              Positioned(
-                                top: 30,
-                                right: 20,
-                                child: Transform.rotate(
-                                  angle: pi / 12,
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-                                    decoration: BoxDecoration(
-                                      border: Border.all(color: Colors.red, width: 3.5),
-                                      borderRadius: BorderRadius.circular(12),
-                                      color: Colors.red.withValues(alpha: 0.2),
-                                    ),
-                                    child: const Text(
-                                      'NOT USED',
-                                      style: TextStyle(
-                                        color: Colors.red,
-                                        fontWeight: FontWeight.w900,
-                                        fontSize: 20,
-                                        letterSpacing: 1.2,
+                              // "NOT USED" Stamp Overlay when dragging left (Dark Slate)
+                              if (isSwipingLeft)
+                                Positioned(
+                                  top: 30,
+                                  right: 20,
+                                  child: Transform.rotate(
+                                    angle: pi / 12,
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                                      decoration: BoxDecoration(
+                                        border: Border.all(color: const Color(0xFF64748B), width: 3.5),
+                                        borderRadius: BorderRadius.circular(12),
+                                        color: darkSlateBlue.withValues(alpha: 0.85),
+                                      ),
+                                      child: const Text(
+                                        'NOT USED',
+                                        style: TextStyle(
+                                          color: Color(0xFFCBD5E1),
+                                          fontWeight: FontWeight.w900,
+                                          fontSize: 20,
+                                          letterSpacing: 1.2,
+                                        ),
                                       ),
                                     ),
                                   ),
                                 ),
-                              ),
-                          ],
+                            ],
+                          ),
                         ),
                       ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
-        ),
-        const SizedBox(height: 12),
+          const SizedBox(height: 12),
 
           // Action Buttons Bar
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
-              // NOT USED Button
+              // NOT USED Button (Dark Slate Blue)
               Flexible(
                 child: ElevatedButton.icon(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: isDarkMode
-                        ? Colors.red.shade900.withValues(alpha: 0.4)
-                        : Colors.red.shade50,
-                    foregroundColor: isDarkMode ? Colors.red.shade200 : Colors.red.shade700,
+                    backgroundColor: darkSlateBlue,
+                    foregroundColor: const Color(0xFFE2E8F0),
                     elevation: 2,
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(30),
-                      side: BorderSide(
-                        color: isDarkMode ? Colors.red.shade400 : Colors.red.shade200,
-                      ),
+                      side: const BorderSide(color: Color(0xFF475569)),
                     ),
                   ),
                   onPressed: () => _handleReview(currentItem, false),
@@ -379,28 +372,39 @@ class _ReviewViewState extends State<ReviewView> {
               ),
               const SizedBox(width: 4),
 
-              // USED Button
+              // USED Button (Single Fire Orange)
               Flexible(
-                child: ElevatedButton.icon(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: isDarkMode ? Colors.green.shade700.withValues(alpha: 0.4) : Colors.green.shade50,
-                    foregroundColor: isDarkMode ? Colors.white : Colors.green.shade700,
-                    elevation: 2,
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(30),
-                      side: BorderSide(
-                        color: isDarkMode ? Colors.green.shade400 : Colors.green.shade600,
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    gradient: AppGradients.orangeGradient,
+                    borderRadius: BorderRadius.circular(30),
+                    boxShadow: const [
+                      BoxShadow(
+                        color: Colors.black26,
+                        blurRadius: 4,
+                        offset: Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: ElevatedButton.icon(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.transparent,
+                      shadowColor: Colors.transparent,
+                      foregroundColor: Colors.white,
+                      elevation: 0,
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(30),
                       ),
                     ),
-                  ),
-                  onPressed: () => _handleReview(currentItem, true),
-                  icon: const Icon(Icons.check, size: 20),
-                  label: const FittedBox(
-                    fit: BoxFit.scaleDown,
-                    child: Text(
-                      'Used (+1 mo)',
-                      style: TextStyle(fontWeight: FontWeight.bold),
+                    onPressed: () => _handleReview(currentItem, true),
+                    icon: const Icon(Icons.check, size: 20),
+                    label: const FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text(
+                        'Used (+1 mo)',
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
                     ),
                   ),
                 ),
@@ -484,7 +488,7 @@ class _ReviewCardContent extends StatelessWidget {
                             '${item.price.toStringAsFixed(2)} €',
                             style: theme.textTheme.titleLarge?.copyWith(
                               fontWeight: FontWeight.bold,
-                              color: theme.colorScheme.primary,
+                              color: fireOrange,
                             ),
                           ),
                         ],
@@ -554,24 +558,24 @@ class _ReviewCardContent extends StatelessWidget {
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                Row(
+                                const Row(
                                   children: [
                                     Icon(
                                       Icons.trending_down,
                                       size: 16,
-                                      color: isDarkMode ? Colors.green.shade300 : Colors.green.shade700,
+                                      color: fireOrange,
                                     ),
-                                    const SizedBox(width: 4),
-                                    Text('If used (+1 mo):', style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.bold)),
+                                    SizedBox(width: 4),
+                                    Text('If used (+1 mo):', style: TextStyle(fontWeight: FontWeight.bold)),
                                   ],
                                 ),
                                 Flexible(
                                   child: Text(
                                     '$nextUsedDuration mo → $newCostPerMo',
                                     textAlign: TextAlign.end,
-                                    style: TextStyle(
+                                    style: const TextStyle(
                                       fontWeight: FontWeight.bold,
-                                      color: isDarkMode ? Colors.green.shade300 : Colors.green.shade700,
+                                      color: fireOrange,
                                     ),
                                   ),
                                 ),

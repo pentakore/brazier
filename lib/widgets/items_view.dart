@@ -3,18 +3,22 @@ import 'package:flutter/material.dart';
 import '../models/item.dart';
 import 'item_card.dart';
 
+typedef ReorderCallback = void Function(int oldIndex, int newIndex);
+
 class ItemsView extends StatefulWidget {
   final List<Item> items;
   final List<Category> categories;
   final String searchQuery;
   final Category? selectedCategoryFilter;
   final bool showOnlyGoalReached;
+  final bool showSegmentedProgressBar;
   final ValueChanged<String> onSearchQueryChanged;
   final ValueChanged<Category?> onCategoryFilterChanged;
   final ValueChanged<bool> onGoalFilterChanged;
   final ValueChanged<Item> onEditItem;
   final ValueChanged<String> onDeleteItem;
   final Function(Item item, MonthlyReviewStatus status) onUpdateMonthlyStatus;
+  final ReorderCallback onReorderItems;
 
   const ItemsView({
     super.key,
@@ -23,12 +27,14 @@ class ItemsView extends StatefulWidget {
     required this.searchQuery,
     required this.selectedCategoryFilter,
     required this.showOnlyGoalReached,
+    this.showSegmentedProgressBar = true,
     required this.onSearchQueryChanged,
     required this.onCategoryFilterChanged,
     required this.onGoalFilterChanged,
     required this.onEditItem,
     required this.onDeleteItem,
     required this.onUpdateMonthlyStatus,
+    required this.onReorderItems,
   });
 
   @override
@@ -42,6 +48,7 @@ class _ItemsViewState extends State<ItemsView> {
     return _isCompactView
         ? CompactItemCard(
             item: item,
+            showSegmentedProgressBar: widget.showSegmentedProgressBar,
             onEdit: () => widget.onEditItem(item),
             onDelete: () => widget.onDeleteItem(item.id),
             onUpdateMonthlyStatus: (newStatus) =>
@@ -49,11 +56,58 @@ class _ItemsViewState extends State<ItemsView> {
           )
         : ItemCard(
             item: item,
+            showSegmentedProgressBar: widget.showSegmentedProgressBar,
             onEdit: () => widget.onEditItem(item),
             onDelete: () => widget.onDeleteItem(item.id),
             onUpdateMonthlyStatus: (newStatus) =>
                 widget.onUpdateMonthlyStatus(item, newStatus),
           );
+  }
+
+  Widget _buildReorderableGridItem(int index, int crossAxisCount, double tileWidth) {
+    final item = widget.items[index];
+    final theme = Theme.of(context);
+
+    return DragTarget<int>(
+      key: ValueKey('drag_${item.id}'),
+      onWillAcceptWithDetails: (details) => details.data != index,
+      onAcceptWithDetails: (details) {
+        widget.onReorderItems(details.data, index);
+      },
+      builder: (context, candidateData, rejectedData) {
+        final isHovered = candidateData.isNotEmpty;
+
+        return LongPressDraggable<int>(
+          data: index,
+          feedback: Material(
+            elevation: 8,
+            borderRadius: BorderRadius.circular(16),
+            color: Colors.transparent,
+            child: SizedBox(
+              width: tileWidth,
+              child: Opacity(
+                opacity: 0.92,
+                child: _buildItemCard(item),
+              ),
+            ),
+          ),
+          childWhenDragging: Opacity(
+            opacity: 0.25,
+            child: _buildItemCard(item),
+          ),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 150),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(16),
+              border: isHovered
+                  ? Border.all(color: theme.colorScheme.primary, width: 2.5)
+                  : null,
+            ),
+            child: _buildItemCard(item),
+          ),
+        );
+      },
+    );
   }
 
   @override
@@ -156,7 +210,7 @@ class _ItemsViewState extends State<ItemsView> {
         ),
         const SizedBox(height: 12),
 
-        // Items List or Responsive Multi-Column Grid
+        // Items List or Responsive Multi-Column Grid with Drag-and-Drop Reordering
         Expanded(
           child: widget.items.isEmpty
               ? Center(
@@ -192,14 +246,24 @@ class _ItemsViewState extends State<ItemsView> {
                     }
 
                     if (crossAxisCount == 1) {
-                      return ListView.builder(
+                      return ReorderableListView.builder(
                         itemCount: widget.items.length,
                         padding: const EdgeInsets.only(bottom: 80),
+                        // ignore: deprecated_member_use
+                        onReorder: (oldIndex, newIndex) {
+                          widget.onReorderItems(oldIndex, newIndex);
+                        },
                         itemBuilder: (context, index) {
-                          return _buildItemCard(widget.items[index]);
+                          final item = widget.items[index];
+                          return KeyedSubtree(
+                            key: ValueKey('reorder_${item.id}'),
+                            child: _buildItemCard(item),
+                          );
                         },
                       );
                     } else {
+                      final tileWidth = (width - 24 - ((crossAxisCount - 1) * 8)) / crossAxisCount;
+
                       return GridView.builder(
                         itemCount: widget.items.length,
                         padding: const EdgeInsets.only(left: 12, right: 12, bottom: 80, top: 4),
@@ -210,7 +274,7 @@ class _ItemsViewState extends State<ItemsView> {
                           mainAxisSpacing: 8,
                         ),
                         itemBuilder: (context, index) {
-                          return _buildItemCard(widget.items[index]);
+                          return _buildReorderableGridItem(index, crossAxisCount, tileWidth);
                         },
                       );
                     }
