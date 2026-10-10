@@ -31,16 +31,38 @@ class _BrazierAppState extends State<BrazierApp> {
 
   @override
   Widget build(BuildContext context) {
-    final seedColor = const Color(0xFF5C6BC0);
-
-    final lightColorScheme = ColorScheme.fromSeed(
-      seedColor: seedColor,
-      brightness: Brightness.light,
-    );
+    const fireOrange = Color(0xFFFF5226); // Single unified Fire Orange Accent
+    const charcoalScaffold = Color(0xFF12151C); // Charcoal Background
+    const charcoalCard = Color(0xFF1C212B); // Charcoal Card Background
+    const charcoalContainer = Color(0xFF252B38);
 
     final darkColorScheme = ColorScheme.fromSeed(
-      seedColor: seedColor,
+      seedColor: fireOrange,
       brightness: Brightness.dark,
+    ).copyWith(
+      primary: fireOrange,
+      onPrimary: Colors.white,
+      secondary: fireOrange,
+      tertiary: fireOrange,
+      surface: charcoalScaffold,
+      surfaceContainerLow: charcoalCard,
+      surfaceContainerLowest: const Color(0xFF161A23),
+      surfaceContainerHighest: charcoalContainer,
+      onSurface: const Color(0xFFE2E8F0),
+      outline: const Color(0xFF3B4454),
+      outlineVariant: const Color(0xFF282E3D),
+    );
+
+    final lightColorScheme = ColorScheme.fromSeed(
+      seedColor: fireOrange,
+      brightness: Brightness.light,
+    ).copyWith(
+      primary: fireOrange,
+      secondary: fireOrange,
+      tertiary: fireOrange,
+      surface: const Color(0xFFF1F4F9),
+      surfaceContainerLow: const Color(0xFFE2E8F0),
+      surfaceContainerHighest: const Color(0xFFCBD5E1),
     );
 
     return MaterialApp(
@@ -464,7 +486,7 @@ class _HomeScreenState extends State<HomeScreen> {
               height: 28,
               width: 28,
               errorBuilder: (context, error, stackTrace) =>
-                  const Icon(Icons.local_fire_department, color: Colors.orangeAccent),
+                  const Icon(Icons.local_fire_department, color: Color(0xFFFF5226)),
             ),
             const SizedBox(width: 8),
             Expanded(
